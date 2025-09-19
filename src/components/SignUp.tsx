@@ -69,8 +69,6 @@ const SignUp = () => {
         }),
       });
 
-      console.log('response', response);
-
       if (response.status === 200) {
         window.alert('Successfully signed up');
         router.push('/');
