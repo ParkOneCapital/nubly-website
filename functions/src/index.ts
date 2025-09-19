@@ -103,53 +103,6 @@ export const verifyAccess = onRequest(async (req, res) => {
   });
 });
 
-export const emailexists = onCall(async (request) => {
-  const { email } = request.data;
-  if (!email || typeof email !== 'string') {
-    throw new HttpsError(
-      'invalid-argument',
-      'The function must be called with a string "email" argument.',
-    );
-  }
-  try {
-    const signUpsCollectionRef = db.collection('signUps');
-    const querySnapshot = await signUpsCollectionRef
-      .where('email', '==', email)
-      .get();
-    return { exists: !querySnapshot.empty };
-  } catch (error) {
-    logger.error('Error checking if email exists:', error);
-    throw new HttpsError('internal', 'Could not check if email exists.');
-  }
-});
-
-export const viewAppAccessCode = onCall(async (request) => {
-  const { accessCode } = request.data;
-  if (!accessCode || typeof accessCode !== 'string') {
-    throw new HttpsError('invalid-argument', 'accessCode is required');
-  }
-  try {
-    const viewAppCodesDocRef = db.collection('accessCodes').doc('viewAppCodes');
-
-    const docSnapshot = await viewAppCodesDocRef.get();
-
-    if (!docSnapshot.exists) {
-      logger.error('viewAppCodes document does not exist.');
-      throw new HttpsError('not-found', 'Access code configuration not found.');
-    }
-
-    const exists = docSnapshot.get(accessCode) !== undefined;
-
-    return { exists };
-  } catch (error) {
-    logger.error('Error checking if access code exists:', error);
-    if (error instanceof HttpsError) {
-      throw error;
-    }
-    throw new HttpsError('internal', 'Could not check if access code exists.');
-  }
-});
-
 export const researchAccessCode = onRequest(async (req, res) => {
   corsHandler(req, res, async () => {
     res.set('Access-Control-Allow-Origin', '*');
@@ -297,7 +250,7 @@ export const saveViewAppLoginAttempt = onRequest(async (req, res) => {
     const rand = Math.random().toString(36).slice(2, 8);
     const attemptKey = `${epochMs}_${rand}`;
 
-    const payload: Record<string, any> = {
+    const payload = {
       inviteeName: accessCode ?? null,
       [`loginAttempts.${attemptKey}`]: {
         success: data.success,
@@ -353,7 +306,7 @@ export const saveResearchLoginAttempt = onRequest(async (req, res) => {
     const rand = Math.random().toString(36).slice(2, 8);
     const attemptKey = `${epochMs}_${rand}`;
 
-    const payload: Record<string, any> = {
+    const payload = {
       inviteeName: accessCode ?? null,
       [`loginAttempts.${attemptKey}`]: {
         success: success,
@@ -394,8 +347,9 @@ export const logResearchInteraction = onRequest(async (req, res) => {
       return;
     }
 
-    const userAgent =
-      typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown';
+    // const userAgent =
+    //   typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown';
+    const userAgent = String(req.headers['user-agent']) || 'unknown';
 
     const data = req.body;
     const { accessCode, cardId, action, success, clientTimestamp, context } =
@@ -416,7 +370,7 @@ export const logResearchInteraction = onRequest(async (req, res) => {
     const rand = Math.random().toString(36).slice(2, 8);
     const eventKey = `${epochMs}_${rand}`;
 
-    const payload: Record<string, any> = {
+    const payload = {
       inviteeName: accessCode ?? null,
       [`events.${eventKey}`]: {
         cardId: cardId,

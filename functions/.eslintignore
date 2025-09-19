@@ -1,0 +1,10 @@
+# Ignore built files
+/lib/**/*
+/generated/**/*
+.eslintrc.js
+
+# Ignore parent directory configs
+../.next/**
+../node_modules/**
+../out/**
+../build/**
