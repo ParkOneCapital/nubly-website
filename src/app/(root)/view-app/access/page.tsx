@@ -1,12 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AccessRequestObject, LocalStorageKey } from '@/types';
-import {
-  getLocalStorageWithExpiry,
-  setLocalStorageWithExpiry,
-} from '@/lib/utils';
+import { setLocalStorageWithExpiry } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -40,16 +37,6 @@ export default function AccessPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { setPermissions } = usePermissions();
-
-  // useEffect(() => {
-  //   // Check if the user already has access
-  //   if (
-  //     getLocalStorageWithExpiry(ACCESS_KEY) === 'true' &&
-  //     getLocalStorageWithExpiry('permissions')
-  //   ) {
-  //     router.push('/view-app');
-  //   }
-  // }, [router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
