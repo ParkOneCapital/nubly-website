@@ -1,6 +1,6 @@
 'use client';
 
-import { NublyPermissions } from '@/types';
+import { ResourcePermissions } from '@/types';
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 // type Permissions = {
@@ -10,8 +10,8 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 // };
 
 type PermissionsContextType = {
-  permissions: NublyPermissions | null;
-  setPermissions: (perms: NublyPermissions) => void;
+  permissions: ResourcePermissions | null;
+  setPermissions: (perms: ResourcePermissions) => void;
   clearPermissions: () => void;
 };
 
@@ -20,11 +20,10 @@ const PermissionsContext = createContext<PermissionsContextType | undefined>(
 );
 
 export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
-  const [permissions, setPermissionsState] = useState<NublyPermissions | null>(
-    null,
-  );
+  const [permissions, setPermissionsState] =
+    useState<ResourcePermissions | null>(null);
 
-  const setPermissions = (perms: NublyPermissions) =>
+  const setPermissions = (perms: ResourcePermissions) =>
     setPermissionsState(perms);
   const clearPermissions = () => setPermissionsState(null);
 
