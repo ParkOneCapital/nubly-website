@@ -6,11 +6,10 @@ import {
   CardAction,
   CardHeader,
   CardTitle,
-  CardContent,
 } from './ui/card';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
-import { Download, Eye } from 'lucide-react';
+import { Download } from 'lucide-react';
 
 type CardContainerProps = {
   accessCode: string | null;

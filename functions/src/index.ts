@@ -181,7 +181,7 @@ export const researchAccessCode = onRequest(async (req, res) => {
       }
 
       const docData = docSnapshot.data();
-      console.log('docData', docData);
+
       if (docData && Object.prototype.hasOwnProperty.call(docData, code)) {
         res.status(200).json({ success: true });
       } else {
@@ -235,7 +235,6 @@ export const saveSignUp = onRequest(async (req, res) => {
         lastName,
         createdAt: FieldValue.serverTimestamp(),
       });
-      console.log('saveSignUp response', response);
       res.status(200).json({
         status: 200,
         message: 'Successfully signed up',
@@ -402,7 +401,6 @@ export const logResearchInteraction = onRequest(async (req, res) => {
     const { accessCode, cardId, action, success, clientTimestamp, context } =
       data || {};
 
-    console.log('logResearchInteraction data', data);
     if (!accessCode || typeof accessCode !== 'string') {
       res.status(400).json({ error: 'accessCode is required' });
       return;
