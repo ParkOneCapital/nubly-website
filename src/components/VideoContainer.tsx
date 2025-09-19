@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Video from './Video';
 import { VideoList } from '@/lib/videoList';
-import VideoSelector from './VideoSelector';
 import VideoCommand from './VideoCommand';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
@@ -21,10 +20,6 @@ const VideoContainer = ({ videoList }: { videoList: VideoList[] }) => {
         videoSrc={selectedVideo}
         className="flex justify-center items-center w-sm"
       />
-      {/* <VideoSelector
-        videoList={videoList}
-        handleVideoSelect={handleVideoSelect}
-      /> */}
       <div className="flex flex-col items-center justify-center gap-y-5">
         <VideoCommand
           videoList={videoList}

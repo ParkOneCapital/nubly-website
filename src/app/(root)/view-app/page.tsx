@@ -2,80 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  getLocalStorageWithExpiry,
-  setLocalStorageWithExpiry,
-} from '@/lib/utils';
+import { getLocalStorageWithExpiry } from '@/lib/utils';
 import Video from '@/components/Video';
-import {
-  AccessCodeObject,
-  AccessRequestObject,
-  LocalStorageKey,
-} from '@/types';
-import { usePermissions } from '@/lib/hooks/Permissions.provider';
+import { AccessCodeObject, LocalStorageKey } from '@/types';
 import VideoContainer from '@/components/VideoContainer';
 import { videoList } from '@/lib/videoList';
 
-const VERIFY_ACCESS_CODE_URL = `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTION_URL}/verifyAccess`;
 const ACCESS_KEY: LocalStorageKey = 'nubly-view-app-access-granted';
 
 const ViewAppPage = () => {
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const [selectedVideo, setSelectedVideo] = useState(videoList[0].videoSource);
-  const [clickedKey, setClickedKey] = useState(0);
   const [accessCode, setAccessCode] = useState<AccessCodeObject | null>(null);
-  const { permissions, setPermissions } = usePermissions();
-
-  // useEffect(() => {
-  //   const accessCode = getLocalStorageWithExpiry('accessCode');
-  //   const viewAppAccessGranted = getLocalStorageWithExpiry(ACCESS_KEY);
-
-  //   if (!accessCode && !viewAppAccessGranted) {
-  //     router.replace('/view-app/access');
-  //     return;
-  //   } else {
-  //     setAccessCode(accessCode);
-  //   }
-
-  //   const asyncWrapper = async () => {
-  //     const accessRequestObject: AccessRequestObject = {
-  //       accessCode: accessCode,
-  //       resource: 'view-app',
-  //     };
-
-  //     try {
-  //       const response = await fetch(VERIFY_ACCESS_CODE_URL, {
-  //         method: 'POST',
-  //         headers: { 'Content-Type': 'application/json' },
-  //         body: JSON.stringify(accessRequestObject),
-  //       });
-
-  //       const data = await response.json();
-
-  //       if (response.ok) {
-  //         if (data.hasPermission) {
-  //           // On success, save the access grant to browser storage
-  //           setLocalStorageWithExpiry(ACCESS_KEY, 'true');
-
-  //           // setLocalStorageData('permissions', JSON.stringify(data.permisions));
-  //           setLocalStorageWithExpiry(
-  //             'permissions',
-  //             JSON.stringify(data.permisions),
-  //           );
-  //           setPermissions(data.permisions);
-  //         }
-  //       } else {
-  //         router.replace('/view-app/access');
-  //       }
-  //     } catch (e) {
-  //       console.error('Failed to call verification function:', e);
-  //       router.replace('/view-app/access');
-  //     }
-  //   };
-
-  //   asyncWrapper();
-  // }, []);
 
   useEffect(() => {
     const accessGranted = getLocalStorageWithExpiry(ACCESS_KEY);

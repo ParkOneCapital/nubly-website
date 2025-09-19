@@ -2,20 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  getLocalStorageWithExpiry,
-  setLocalStorageWithExpiry,
-} from '@/lib/utils';
+import { getLocalStorageWithExpiry } from '@/lib/utils';
 import CardContainer from '@/components/CardContainer';
 import { usePermissions } from '@/lib/hooks/Permissions.provider';
-import {
-  AccessRequestObject,
-  LocalStorageKey,
-  AccessCodeObject,
-} from '@/types';
+import { LocalStorageKey, AccessCodeObject } from '@/types';
 import { Button } from '@/components/ui/button';
 
-const VERIFY_ACCESS_CODE_URL = `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTION_URL}/verifyAccess`;
 const ACCESS_KEY: LocalStorageKey = 'nubly-research-access-granted';
 
 const NublyResearchPage = () => {
@@ -23,57 +15,6 @@ const NublyResearchPage = () => {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [accessCode, setAccessCode] = useState<AccessCodeObject | null>(null);
   const { permissions, setPermissions } = usePermissions();
-
-  // useEffect(() => {
-  //   const accessCode = getLocalStorageWithExpiry('accessCode');
-  //   const nublyResearchAccessGranted = getLocalStorageWithExpiry(
-  //     'nubly-research-access-granted',
-  //   );
-  //   if (!accessCode && !nublyResearchAccessGranted) {
-  //     router.replace('/nubly-research/access');
-  //     return;
-  //   } else {
-  //     setAccessCode(accessCode);
-  //   }
-
-  //   const asyncWrapper = async () => {
-  //     const accessRequestObject: AccessRequestObject = {
-  //       accessCode: accessCode,
-  //       resource: 'nubly-research',
-  //     };
-
-  //     try {
-  //       const response = await fetch(VERIFY_ACCESS_CODE_URL, {
-  //         method: 'POST',
-  //         headers: { 'Content-Type': 'application/json' },
-  //         body: JSON.stringify(accessRequestObject),
-  //       });
-
-  //       const data = await response.json();
-
-  //       if (response.ok) {
-  //         if (data.hasPermission) {
-  //           // On success, save the access grant to browser storage
-  //           setLocalStorageWithExpiry(ACCESS_KEY, 'true');
-
-  //           // setLocalStorageData('permissions', JSON.stringify(data.permisions));
-  //           setLocalStorageWithExpiry(
-  //             'permissions',
-  //             JSON.stringify(data.permisions),
-  //           );
-  //           setPermissions(data.permisions);
-  //         }
-  //       } else {
-  //         router.replace('/nubly-research/access');
-  //       }
-  //     } catch (e) {
-  //       console.error('Failed to call verification function:', e);
-  //       router.replace('/nubly-research/access');
-  //     }
-  //   };
-
-  //   asyncWrapper();
-  // }, [router]);
 
   useEffect(() => {
     const accessGranted = getLocalStorageWithExpiry(ACCESS_KEY);
