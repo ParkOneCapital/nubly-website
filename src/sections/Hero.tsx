@@ -18,7 +18,7 @@ const Hero = () => {
               height={100}
             />
             <h1 className="text-5xl md:text-7xl text-left font-extrabold text-nubly-blue mt-4 font">
-              Let's Live <br />
+              Let&apos;s Live <br />
               Goal to Goal Instead.
             </h1>
             <h3 className="text-2xl md:text-2xl mt-5 text-left">

@@ -47,3 +47,4 @@ firebase.indexes.json
 firebase.rules
 firebase.json
 .firebaserc
+functions/lib

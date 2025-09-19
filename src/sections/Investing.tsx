@@ -21,7 +21,7 @@ const Investing = () => {
             your future plans.
             <br></br>
             <br></br>
-            Now you can focus on living, we'll handle the rest!
+            Now you can focus on living, we&apos;ll handle the rest!
           </h3>
           <button
             className="bg-nubly-yellow text-black font-bold text-xl px-5 py-3 rounded-4xl mt-8 w-full md:w-max hover:bg-nubly-yellow/80 active:bg-nubly-yellow/60"

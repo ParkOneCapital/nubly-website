@@ -44,7 +44,7 @@ export type ResourcePermissions = {
   'nubly-research'?: NublyResearchPermissions;
   'view-app'?: ViewAppPermissions;
   // Add more resources as needed
-  [resource: string]: any; // fallback for extensibility
+  [resource: string]: NublyResearchPermissions | ViewAppPermissions | undefined; // fallback for extensibility
 };
 
 export type AccessCodeObject = {
