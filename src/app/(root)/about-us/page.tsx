@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 
 const AboutUs = () => {
@@ -12,7 +11,7 @@ const AboutUs = () => {
     <section className="w-full text-center">
       <div className="md:px-70 md:py-10">
         <h1 className="text-5xl text-nubly-blue font-bold px-10 py-10 md:mx-10 md:my-10">
-          We're making finance simple & goal based for everyone
+          We&apos;re making finance simple & goal based for everyone
         </h1>
         <h6 className="text-2xl px-10 py-5 md:mx-10 md:my-10">
           Nubly is a financial technology company that empowers people to take
