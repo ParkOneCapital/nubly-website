@@ -52,6 +52,7 @@ export default function AccessPage() {
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    console.log('handleSubmit');
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -90,6 +91,7 @@ export default function AccessPage() {
       });
 
       const data = await response.json();
+      console.log('data', data);
 
       if (response.ok) {
         await fetch(SAVE_RESEARCH_LOGIN_ATTEMPT_URL, {
