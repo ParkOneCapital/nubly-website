@@ -66,7 +66,7 @@ const CardContainer = ({
     });
 
     const link = document.createElement('a');
-    link.href = filename; // or your dynamic URL
+    link.href = `/documents/${filename}.pdf`; // or your dynamic URL
     link.download = `${filename}.pdf`; // optional: specify filename
     document.body.appendChild(link);
     link.click();
