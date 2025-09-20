@@ -62,7 +62,7 @@ const NublyResearchPage = () => {
             cardId="baas-overview"
             title="BaaS Overview"
             description="Open sourced research"
-            link="https://www.livenubly.com/nubly-research-baas-overview/cover-page.html"
+            link="https://parkonecapital.github.io/nubly-research-baas-overview/cover-page.html"
             permissions={{
               view: permissions?.['nubly-research']?.['baas-overview']?.view,
               download:
@@ -74,7 +74,7 @@ const NublyResearchPage = () => {
             cardId="baas-transformation-strategy"
             title="BaaS Transformation Strategy"
             description="Model Summary"
-            link="https://www.livenubly.com/nubly-research-baas-transformation-strategy/cover-page.html"
+            link="https://parkonecapital.github.io/nubly-research-baas-transformation-strategy/cover-page.html"
             permissions={{
               view: permissions?.['nubly-research']?.[
                 'baas-transformation-strategy'
@@ -90,7 +90,7 @@ const NublyResearchPage = () => {
             cardId="modern-fintech-future"
             title="Modern Fintech Future"
             description="Open sourced research"
-            link="https://www.livenubly.com/nubly-research-modern-fintech-future/cover-page.html"
+            link="https://parkonecapital.github.io/nubly-research-modern-fintech-future/cover-page.html"
             permissions={{
               view: permissions?.['nubly-research']?.['modern-fintech-future']
                 ?.view,
@@ -104,7 +104,7 @@ const NublyResearchPage = () => {
             cardId="the-modern-cdfi"
             title="The Modern CDFI"
             description="Whitepaper #1"
-            link="https://www.livenubly.com/nubly-research-who-are-we/cover-page.html"
+            link="https://parkonecapital.github.io/nubly-research-who-are-we/cover-page.html"
             permissions={{
               view: permissions?.['nubly-research']?.['the-modern-dcfi']?.view,
               download:
