@@ -106,9 +106,9 @@ const NublyResearchPage = () => {
             description="Whitepaper #1"
             link="https://parkonecapital.github.io/nubly-research-who-are-we/cover-page.html"
             permissions={{
-              view: permissions?.['nubly-research']?.['the-modern-dcfi']?.view,
+              view: permissions?.['nubly-research']?.['the-modern-cdfi']?.view,
               download:
-                permissions?.['nubly-research']?.['the-modern-dcfi']?.download,
+                permissions?.['nubly-research']?.['the-modern-cdfi']?.download,
             }}
           />
         </div>
