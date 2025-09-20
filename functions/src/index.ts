@@ -94,9 +94,7 @@ export const verifyAccess = onRequest(async (req, res) => {
           accessCode: { accessCode, firstName, lastName },
         });
       } else {
-        res
-          .status(200)
-          .json({ hasPermission: false, permissions: permissions });
+        res.status(200).json({ hasPermission: false });
       }
     } catch (error) {
       logger.error('Error verifying access:', error);
