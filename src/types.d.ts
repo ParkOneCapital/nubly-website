@@ -63,6 +63,7 @@ export type AccessCodeObject = {
  *    updatedAt: '2021-01-01',
  *    permissions: {
  *      'nubly-research': {
+ *        access: true,
  *        'baas-overview': {
  *          view: true,
  *          download: true,
@@ -73,6 +74,7 @@ export type AccessCodeObject = {
  *        },
  *      },
  *      'view-app': {
+ *        access: true,
  *        view: true,
  *      },
  *    },
