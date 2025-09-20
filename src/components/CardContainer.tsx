@@ -32,12 +32,12 @@ const CardContainer = ({
   link,
   permissions,
 }: CardContainerProps) => {
-  const handleDownload = async (filename: string) => {
+  const handleDownload = (filename: string) => {
     //check for permission to download
     if (!permissions.download) {
       window.alert('Download is not allowed for this resource.');
 
-      await fetch(LOG_RESEARCH_INTERACTION_URL, {
+      fetch(LOG_RESEARCH_INTERACTION_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -52,7 +52,14 @@ const CardContainer = ({
       return;
     }
 
-    await fetch(LOG_RESEARCH_INTERACTION_URL, {
+    const link = document.createElement('a');
+    link.href = `/documents/${filename}.pdf`; // or your dynamic URL
+    link.download = `${filename}.pdf`; // optional: specify filename
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    fetch(LOG_RESEARCH_INTERACTION_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -64,19 +71,12 @@ const CardContainer = ({
         success: true,
       }),
     });
-
-    const link = document.createElement('a');
-    link.href = `/documents/${filename}.pdf`; // or your dynamic URL
-    link.download = `${filename}.pdf`; // optional: specify filename
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
-  const handleView = async (link: string) => {
+  const handleView = (link: string) => {
     //check for permission to view
     if (!permissions.view) {
-      await fetch(LOG_RESEARCH_INTERACTION_URL, {
+      fetch(LOG_RESEARCH_INTERACTION_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -94,7 +94,9 @@ const CardContainer = ({
       return;
     }
 
-    await fetch(LOG_RESEARCH_INTERACTION_URL, {
+    window.open(link, '_blank', 'noopener,noreferrer');
+
+    fetch(LOG_RESEARCH_INTERACTION_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -106,8 +108,6 @@ const CardContainer = ({
         success: true,
       }),
     });
-
-    window.open(link, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -123,12 +123,6 @@ const CardContainer = ({
         </CardAction>
       </CardHeader>
       <CardFooter>
-        {/* <Button
-          type="button"
-          onClick={() => handleDownload(cardId)}
-          className="w-1/2 bg-nubly-blue/80 text-white hover:bg-nubly-blue/60 active:bg-nubly-blue">
-          Download
-        </Button> */}
         <Button
           type="button"
           className="w-full bg-nubly-blue/80 text-white hover:bg-nubly-blue active:bg-nubly-blue/40"
