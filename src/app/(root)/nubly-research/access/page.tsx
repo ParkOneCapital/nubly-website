@@ -52,7 +52,6 @@ export default function AccessPage() {
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    console.log('handleSubmit');
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -91,7 +90,6 @@ export default function AccessPage() {
       });
 
       const data = await response.json();
-      console.log('data', data);
 
       if (response.ok) {
         await fetch(SAVE_RESEARCH_LOGIN_ATTEMPT_URL, {
@@ -120,6 +118,9 @@ export default function AccessPage() {
           router.push('/nubly-research');
         } else if (data.hasPermission === false) {
           setError('Access denied. Please contact support.');
+          setFormErrors({
+            accessCode: 'Access denied. Please contact support.',
+          });
           setIsLoading(false);
         }
       } else {
@@ -138,11 +139,17 @@ export default function AccessPage() {
           }),
         });
         setError(data.error || 'Invalid access code. Please try again.');
+        setFormErrors({
+          accessCode: 'Invalid access code. Please try again.',
+        });
         setIsLoading(false);
       }
     } catch (e) {
       console.error('Failed to call verification function:', e);
       setError('An unexpected error occurred. Please try again.');
+      setFormErrors({
+        accessCode: 'An unexpected error occurred. Please try again.',
+      });
       setIsLoading(false);
     }
   };

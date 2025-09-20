@@ -8,3 +8,11 @@ typings/
 # Node.js dependency directory
 node_modules/
 *.local
+
+firestore-debug.log*
+firebase-debug.log*
+firebase.indexes.json
+firebase.rules
+firebase.json
+.firebaserc
+lib/
