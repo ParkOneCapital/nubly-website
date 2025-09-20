@@ -126,7 +126,7 @@ const CardContainer = ({
         <Button
           type="button"
           className="w-full bg-nubly-blue/80 text-white hover:bg-nubly-blue active:bg-nubly-blue/40"
-          onClick={async () => await handleView(link)}>
+          onClick={() => handleView(link)}>
           View
         </Button>
       </CardFooter>
