@@ -18,7 +18,7 @@ const InvestingGoalCardsContainer = () => {
           setIsRefVisible(false);
         }
       },
-      { threshold: 0.95 },
+      { threshold: 0.6 },
     );
 
     const currentRef = containerRef.current;
@@ -35,9 +35,7 @@ const InvestingGoalCardsContainer = () => {
   }, []);
 
   return (
-    <div
-      ref={containerRef}
-      className="relative w-full flex items-center justify-center md:ml-20">
+    <div className="relative w-full flex items-center justify-center md:ml-20">
       <Image
         src="/assets/app_screen_investing.png"
         alt="Investing"
@@ -46,8 +44,9 @@ const InvestingGoalCardsContainer = () => {
       />
       <div className="absolute inset-0 flex flex-col items-center justify-center pt-85 md:pt-95">
         <div
+          ref={containerRef}
           className={[
-            'transform transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform',
+            'transform transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform',
             isRefVisible
               ? [
                   // mobile base
@@ -74,7 +73,7 @@ const InvestingGoalCardsContainer = () => {
         </div>
         <div
           className={[
-            'transform transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform',
+            'transform transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform',
             isRefVisible
               ? [
                   // mobile base
