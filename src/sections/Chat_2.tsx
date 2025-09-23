@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import ChatContainer from '@/components/ChatContainer';
 import Image from 'next/image';
+import ChatContainer_2 from '@/components/ChatContainer_2';
 
 const Chat = () => {
   const router = useRouter();
@@ -28,8 +28,18 @@ const Chat = () => {
           </button>
         </div>
 
-        <div className="md:w-1/2 flex flex-col items-center md:order-1 md:px-20 pb-10 md:items-end">
-          <ChatContainer />
+        <div className="md:w-1/2 flex flex-col items-center md:order-1 md:px-20 md:items-end">
+          <div className="relative">
+            <Image
+              src="/assets/ai_chat_empty.png"
+              alt="AI chat"
+              width={300}
+              height={300}
+            />
+            <div className="absolute top-53 left-6 right-6 bottom-10 overflow-y-auto no-scrollbar">
+              <ChatContainer_2 />
+            </div>
+          </div>
         </div>
       </div>
     </section>

@@ -99,32 +99,6 @@ const ChatContainer = () => {
             <div className="bg-white text-gray-800 px-3 py-2 rounded-lg max-w-[90%] border border-nubly-yellow">
               <p>Excellent! Your goal has been created.</p>
 
-              {/* <div className="mt-2 border border-cyan-200 rounded-lg flex items-stretch overflow-hidden">
-                <div className="bg-cyan-600 p-3 flex items-center justify-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}>
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0c-.454-.303-.977-.454-1.5-.454V5.454c0-.523.151-1.046.454-1.5a2.704 2.704 0 010-3 2.704 2.704 0 000-3c.303-.454.523-.977.454-1.5H15.546c.523 0 1.046-.151 1.5-.454a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0c.454.303.977.454 1.5.454v10.092zM15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19.5 8.25l-7.5 7.5-7.5-7.5"
-                    />
-                  </svg>
-                </div>
-                <div className="flex-grow flex justify-between items-center p-3 text-sm">
-                  <span>Mom&apos;s fancy birthdday dinner</span>
-                  <span className="font-bold">$350</span>
-                </div>
-              </div> */}
               <Image
                 src="/assets/mothers_dinner.png"
                 alt="Mother's dinner"

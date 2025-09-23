@@ -28,8 +28,13 @@ const Chat = () => {
           </button>
         </div>
 
-        <div className="md:w-1/2 flex flex-col items-center md:order-1 md:px-20 pb-10 md:items-end">
-          <ChatContainer />
+        <div className="md:w-1/2 flex flex-col items-center md:order-1 md:px-20 md:items-end">
+          <Image
+            src="/assets/ai_chat_conversation.png"
+            alt="AI chat conversation"
+            width={300}
+            height={300}
+          />
         </div>
       </div>
     </section>

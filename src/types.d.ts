@@ -1,4 +1,8 @@
-export type ResourceCode = 'view-app' | 'nubly-research' | 'data-room';
+export type ResourceCode =
+  | 'view-app'
+  | 'nubly-research'
+  | 'data-room'
+  | 'investor-relations';
 
 export type FirestoreCollection = 'accessCodes';
 
@@ -11,6 +15,7 @@ export type LocalStorageKey =
   | 'nubly-research-access-granted'
   | 'nubly-view-app-access-granted'
   | 'nubly-data-room-access-granted'
+  | 'investor-relations-access-granted'
   | 'permissions'
   | 'accessCode';
 

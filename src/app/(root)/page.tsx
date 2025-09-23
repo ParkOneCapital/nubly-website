@@ -6,6 +6,8 @@ import Faqs from '@/sections/Faqs';
 import Savings from '@/sections/Savings';
 import Investing from '@/sections/Investing';
 import Chat from '@/sections/Chat';
+import Chat_1 from '@/sections/Chat_1';
+import Chat_2 from '@/sections/Chat_2';
 import Notifications from '@/sections/Notifications';
 import End from '@/sections/End';
 
@@ -23,6 +25,8 @@ const Home = () => {
       </div>
       <div>
         <Chat />
+        {/* <Chat_1 /> */}
+        {/* <Chat_2 /> */}
       </div>
       <div>
         <Notifications />
