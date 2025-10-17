@@ -24,24 +24,24 @@ const SubmitPage = () => {
         </div>
         <div className="flex gap-4 items-center justify-center">
           <Link
-            href="https://www.tiktok.com/@livenubly"
-            target="_blank"
-            rel="noopener noreferrer">
-            <Image
-              src="/assets/logos/tik_tok.png"
-              alt="Tik Tok"
-              width={100}
-              height={100}
-              className="pb-5"
-            />
-          </Link>
-          <Link
             href="https://www.instagram.com/livenubly/"
             target="_blank"
             rel="noopener noreferrer">
             <Image
               src="/assets/logos/instagram.png"
               alt="Instagram"
+              width={100}
+              height={100}
+              className="pb-5"
+            />
+          </Link>
+          <Link
+            href="https://www.tiktok.com/@livenubly"
+            target="_blank"
+            rel="noopener noreferrer">
+            <Image
+              src="/assets/logos/tik_tok.png"
+              alt="Tik Tok"
               width={100}
               height={100}
               className="pb-5"
