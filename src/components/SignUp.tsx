@@ -70,8 +70,7 @@ const SignUp = () => {
       });
 
       if (response.status === 200) {
-        window.alert('Successfully signed up');
-        router.push('/');
+        router.push('/waitlist-submitted');
       } else if (response.status === 409) {
         window.alert('A signup with this email already exists.');
       } else {
