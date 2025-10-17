@@ -13,14 +13,14 @@ const SubmitPage = () => {
     <div className="w-full text-center">
       <div className="md:px-70 md:py-10">
         <div className="text-5xl text-nubly-blue font-bold px-10 py-10 md:mx-10 md:my-10">
-          <h1>You're in the waitlist!</h1>
+          <h1>You&apos;re in the waitlist!</h1>
         </div>
         <div className="text-2xl px-10 py-5 md:mx-10 md:my-10">
           <h2>
             Follow us on Tik Tok and Instagram for the latest financial tips.
           </h2>
 
-          <h2>You're well on your way to Living Nubly!</h2>
+          <h2>You&apos;re well on your way to Living Nubly!</h2>
         </div>
         <div className="flex gap-4 items-center justify-center">
           <Link
