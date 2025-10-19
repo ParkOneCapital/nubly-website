@@ -23,6 +23,7 @@ const Footer = () => {
         <div className="flex items-start justify-center md:pr-10">
           <div>
             <Button
+              id="view-nubly-research"
               variant="link"
               className="text-xs md:text-base md:font-semibold"
               onClick={() => router.push('/nubly-research')}>
@@ -31,6 +32,7 @@ const Footer = () => {
           </div>
           <div>
             <Button
+              id="view-app-button"
               variant="link"
               className="text-xs md:text-base md:font-semibold"
               onClick={() => router.push('/view-app')}>
@@ -39,6 +41,7 @@ const Footer = () => {
           </div>
           <div>
             <Button
+              id="about-us-button"
               variant="link"
               className="text-xs md:text-base md:font-semibold"
               onClick={() => router.push('/about-us')}>
