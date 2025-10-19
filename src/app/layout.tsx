@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { twMerge } from 'tailwind-merge';
+import { Suspense } from 'react';
 import { PermissionsProvider } from '@/lib/hooks/Permissions.provider';
 import GoogleAnalytics from '@/components/Tracking/Google/GoogleTagManager';
 import GoogleTagManager from '@/components/Tracking/Google/GoogleTagManager';
@@ -33,7 +34,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <PermissionsProvider>
           <GoogleTagManager GTM_ID={process.env.NEXT_PUBLIC_GTM_ID as string} />
-          <PageViewTracker />
+          <Suspense fallback={null}>
+            <PageViewTracker />
+          </Suspense>
 
           {/* GTM noscript fallback */}
           <noscript>
