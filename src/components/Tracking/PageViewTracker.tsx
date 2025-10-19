@@ -3,7 +3,7 @@
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 
-export default function PageViewTracker() {
+function TrackPageView() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -24,4 +24,8 @@ export default function PageViewTracker() {
   }, [pathname, searchParams]);
 
   return null;
+}
+
+export default function PageViewTracker() {
+  return <TrackPageView />;
 }
