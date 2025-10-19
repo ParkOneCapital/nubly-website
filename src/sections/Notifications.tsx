@@ -19,6 +19,7 @@ const Notifications = () => {
             goals.
           </h3>
           <button
+            id="join-waitlist-4"
             className="bg-nubly-blue text-white font-bold text-xl px-5 py-3 rounded-4xl mt-8 w-full md:w-max hover:bg-nubly-blue/80 active:bg-nubly-blue/60"
             onClick={() => router.push('/join-waitlist')}>
             Join waitlist
