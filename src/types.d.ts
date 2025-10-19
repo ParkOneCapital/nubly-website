@@ -1,3 +1,14 @@
+export declare global {
+  interface Window {
+    gtag: (
+      command: 'config' | 'event' | 'js' | 'set',
+      targetId: string,
+      config?: Record<string, string | number | boolean | undefined>,
+    ) => void;
+    dataLayer: Record<string, unknown>[];
+  }
+}
+
 export type ResourceCode = 'view-app' | 'nubly-research' | 'data-room';
 
 export type FirestoreCollection = 'accessCodes';
