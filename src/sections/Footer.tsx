@@ -57,6 +57,7 @@ const Footer = () => {
         </div>
         <div className="flex pr-5 gap-2">
           <Link
+            id="footer-instagram"
             href="https://www.instagram.com/livenubly/"
             target="_blank"
             rel="noopener noreferrer">
@@ -69,6 +70,7 @@ const Footer = () => {
             />
           </Link>
           <Link
+            id="footer-tik-tok"
             href="https://www.tiktok.com/@livenubly"
             target="_blank"
             rel="noopener noreferrer">

@@ -11,10 +11,14 @@ const FaqsAccordian = () => {
 
   const faqsItems = faqs.map((faq, index) => (
     <AccordionItem key={index} value={faq.question}>
-      <AccordionTrigger className="text-xl font-medium">
+      <AccordionTrigger
+        id={`accordion-item-${index}`}
+        className="text-xl font-medium">
         {faq.question}
       </AccordionTrigger>
-      <AccordionContent className="text-lg text-gray-600">
+      <AccordionContent
+        id={`accordion-item-${index}-answer`}
+        className="text-lg text-gray-600">
         {faq.answer}
       </AccordionContent>
     </AccordionItem>
