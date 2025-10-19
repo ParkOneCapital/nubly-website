@@ -1,11 +1,6 @@
 import Script from 'next/script';
 
 export default function GoogleTagManager() {
-  // if (!GTM_ID) {
-  //   console.warn('GoogleTagManager ID is missing!');
-  //   return null;
-  // }
-
   return (
     <>
       <Script

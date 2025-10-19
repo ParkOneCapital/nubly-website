@@ -26,6 +26,7 @@ const Hero = () => {
               on your life journey. Making progress is now simple.
             </h3>
             <button
+              id="join-waitlist-1"
               className="bg-nubly-yellow text-black font-bold text-xl px-5 py-3 rounded-4xl w-max mt-8 hover:bg-nubly-yellow/80 active:bg-nubly-yellow/60"
               onClick={() => router.push('/join-waitlist')}>
               Join waitlist

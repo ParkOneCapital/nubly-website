@@ -21,6 +21,7 @@ const Chat = () => {
             track.
           </h3>
           <button
+            id="join-waitlist-ai-chat"
             className="bg-nubly-yellow text-black font-bold text-xl px-5 py-3 rounded-4xl mt-8 w-full md:w-max hover:bg-nubly-yellow/80 active:bg-nubly-yellow/60"
             onClick={() => router.push('/join-waitlist')}>
             Join waitlist
