@@ -4,9 +4,10 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import InvestingGoalCardsContainer from '@/components/InvestingGoalCardContainer';
 import { useScrollRouter } from '@/lib/hooks/useScrollRouter';
+import { SectionId } from '@/types';
 
 const Investing = () => {
-  const sectionId = 'investing';
+  const sectionId: SectionId = 'investing';
   const router = useRouter();
   const sectionRef = useScrollRouter(sectionId);
 

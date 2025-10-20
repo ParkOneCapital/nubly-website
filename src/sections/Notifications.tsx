@@ -4,9 +4,10 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import NotificationsCardContainer from '@/components/NotificationsCardContainer';
 import { useScrollRouter } from '@/lib/hooks/useScrollRouter';
+import { SectionId } from '@/types';
 
 const Notifications = () => {
-  const sectionId = 'notifications';
+  const sectionId: SectionId = 'notifications';
   const router = useRouter();
   const sectionRef = useScrollRouter(sectionId);
 

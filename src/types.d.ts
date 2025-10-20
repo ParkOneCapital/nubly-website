@@ -9,6 +9,16 @@ export declare global {
   }
 }
 
+export type SectionId =
+  | 'home'
+  | 'savings'
+  | 'investing'
+  | 'chat'
+  | 'notifications'
+  | 'end'
+  | 'faqs'
+  | 'footer';
+
 export type ResourceCode = 'view-app' | 'nubly-research' | 'data-room';
 
 export type FirestoreCollection = 'accessCodes';

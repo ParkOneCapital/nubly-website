@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
+import { SectionId } from '@/types';
 
 interface SectionView {
   sectionId: string;
@@ -10,7 +11,10 @@ interface SectionView {
   duration?: number;
 }
 
-export const useSectionAnalytics = (sectionId: string, isVisible: boolean) => {
+export const useSectionAnalytics = (
+  sectionId: SectionId,
+  isVisible: boolean,
+) => {
   const entryTimeRef = useRef<number | null>(null);
   const viewDataRef = useRef<SectionView | null>(null);
 
@@ -19,7 +23,7 @@ export const useSectionAnalytics = (sectionId: string, isVisible: boolean) => {
     if (typeof window !== 'undefined' && window.dataLayer) {
       window.dataLayer.push({
         // 'event' is a special key that GTM uses for triggers.
-        event: 'section_view',
+        event: `section_view_${sectionId}`,
 
         // The rest of your data is passed along in the same object.
         section_id: data.sectionId,
