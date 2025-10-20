@@ -140,16 +140,16 @@ const SignUp = () => {
       </CardContent>
       <CardFooter className="flex-row gap-2">
         <Button
+          id="cancel-signup-form"
           type="button"
           variant="outline"
           onClick={() => router.push('/')}
           disabled={isSubmitting}
-          className="w-1/2"
-          // className="w-1/2 bg-nubly-blue/80 text-white hover:bg-nubly-blue active:bg-nubly-blue/40"
-        >
+          className="w-1/2">
           Cancel
         </Button>
         <Button
+          id="submit-signup-form"
           type="submit"
           disabled={isSubmitting}
           onClick={handleSubmit}

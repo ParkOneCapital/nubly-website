@@ -16,7 +16,7 @@ function TrackPageView() {
       // Push to dataLayer for GTM
       window.dataLayer = window.dataLayer || [];
       window.dataLayer.push({
-        event: 'page_view',
+        event: 'page_view_tracker',
         page_path: url,
         page_title: document.title,
       });

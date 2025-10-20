@@ -3,11 +3,18 @@
 import React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useScrollRouter } from '@/lib/hooks/useScrollRouter';
 
 const Hero = () => {
+  const sectionId = '';
   const router = useRouter();
+  const sectionRef = useScrollRouter(sectionId);
+
   return (
-    <section className="w-full px-2 mb-30 md:my-20">
+    <section
+      id={sectionId}
+      ref={sectionRef}
+      className="w-full px-2 mb-30 md:my-20">
       <div className="container mx-auto flex flex-col md:flex-row justify-between items-center p-8">
         <div className="md:w-1/2 text-left mb-8 md:mb-0 md:ml-10">
           <div className="max-w-md text-left items-start">

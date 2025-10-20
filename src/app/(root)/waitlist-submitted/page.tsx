@@ -24,6 +24,7 @@ const SubmitPage = () => {
         </div>
         <div className="flex gap-4 items-center justify-center">
           <Link
+            id="waitlist-submitted-instagram"
             href="https://www.instagram.com/livenubly/"
             target="_blank"
             rel="noopener noreferrer">
@@ -36,6 +37,7 @@ const SubmitPage = () => {
             />
           </Link>
           <Link
+            id="waitlist-submitted-tik-tok"
             href="https://www.tiktok.com/@livenubly"
             target="_blank"
             rel="noopener noreferrer">
@@ -51,6 +53,7 @@ const SubmitPage = () => {
 
         <div className="w-full flex justify-center pt-15">
           <Button
+            id="return-to-home-from-waitlist-submitted"
             type="button"
             className="bg-nubly-yellow text-black hover:bg-nubly-yellow/40 active:bg-nubly-yellow"
             onClick={() => router.push('/')}>

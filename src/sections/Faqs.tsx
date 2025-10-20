@@ -1,9 +1,16 @@
 import React from 'react';
 import FaqsAccordian from '@/components/FaqsAccordian';
+import { useScrollRouter } from '@/lib/hooks/useScrollRouter';
 
 const Faqs = () => {
+  const sectionId = 'faqs';
+  const sectionRef = useScrollRouter(sectionId);
+
   return (
-    <section className="w-full md:pt-10 pl-10 pr-10 mb-10">
+    <section
+      id={sectionId}
+      ref={sectionRef}
+      className="w-full md:pt-10 pl-10 pr-10 mb-10">
       <div>
         <h1 className="text-3xl md:text-3xl text-center font-bold pt-9 p-9">
           FAQs
