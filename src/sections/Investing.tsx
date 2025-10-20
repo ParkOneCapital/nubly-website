@@ -3,13 +3,18 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import InvestingGoalCardsContainer from '@/components/InvestingGoalCardContainer';
+import { useScrollRouter } from '@/lib/hooks/useScrollRouter';
 
 const Investing = () => {
+  const sectionId = 'investing';
   const router = useRouter();
+  const sectionRef = useScrollRouter(sectionId);
 
   return (
-    // <section className="w-full mt-10 md:pb-23 md:pt-20 border-b-nubly-yellow border-b-1">
-    <section className="w-full border-b-nubly-yellow border-b-1 px-10 pt-15">
+    <section
+      id={sectionId}
+      ref={sectionRef}
+      className="w-full border-b-nubly-yellow border-b-1 px-10 pt-15">
       <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
         <div className="md:w-1/2 text-left mb-8 md:mb-0 md:order-1 md:px-10 md:pb-20">
           <h1 className="text-4xl md:pt-10 text-left font-extrabold text-nubly-blue mt-4">

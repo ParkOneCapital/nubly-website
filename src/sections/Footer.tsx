@@ -9,7 +9,9 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <section className="w-full flex flex-col justify-center py-3">
+    <section
+      data-section-id="footer"
+      className="w-full flex flex-col justify-center py-3">
       <div className="bg-base-grey flex justify-between items-center py-5 px-2 md:px-15">
         <div className="w-2/12 h-2/12 flex items-center pl-2">
           <Image
