@@ -16,8 +16,7 @@ export type SectionId =
   | 'chat'
   | 'notifications'
   | 'end'
-  | 'faqs'
-  | 'footer';
+  | 'faqs';
 
 export type ResourceCode = 'view-app' | 'nubly-research' | 'data-room';
 
