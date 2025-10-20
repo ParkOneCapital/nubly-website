@@ -8,7 +8,7 @@ const AboutUs = () => {
   const router = useRouter();
 
   return (
-    <section className="w-full text-center">
+    <section data-section-id="about-us" className="w-full text-center">
       <div className="md:px-70 md:py-10">
         <h1 className="text-5xl text-nubly-blue font-bold px-10 py-10 md:mx-10 md:my-10">
           We&apos;re making finance simple & goal based for everyone
