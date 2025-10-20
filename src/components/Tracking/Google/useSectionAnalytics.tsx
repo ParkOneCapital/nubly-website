@@ -16,13 +16,21 @@ export const useSectionAnalytics = (sectionId: string, isVisible: boolean) => {
 
   const sendAnalytics = useCallback((data: SectionView) => {
     // Google Analytics 4
-    if (typeof window !== 'undefined' && window.gtag) {
-      window.gtag('event', 'section_view', {
+    if (typeof window !== 'undefined' && window.dataLayer) {
+      window.dataLayer.push({
+        // 'event' is a special key that GTM uses for triggers.
+        event: 'section_view',
+
+        // The rest of your data is passed along in the same object.
         section_id: data.sectionId,
         duration_ms: data.duration,
         entry_time: data.entryTime,
         exit_time: data.exitTime,
       });
+    } else {
+      console.error(
+        'GTM ERROR: window.dataLayer not found. Analytics event was not sent.',
+      );
     }
   }, []);
 
