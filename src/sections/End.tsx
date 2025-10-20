@@ -1,9 +1,10 @@
 import React from 'react';
 import Image from 'next/image';
 import { useScrollRouter } from '@/lib/hooks/useScrollRouter';
+import { SectionId } from '@/types';
 
 const End = () => {
-  const sectionId = 'end';
+  const sectionId: SectionId = 'end';
   const sectionRef = useScrollRouter(sectionId);
 
   return (

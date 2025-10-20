@@ -4,9 +4,10 @@ import React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useScrollRouter } from '@/lib/hooks/useScrollRouter';
+import { SectionId } from '@/types';
 
 const Hero = () => {
-  const sectionId = '';
+  const sectionId: SectionId = 'home';
   const router = useRouter();
   const sectionRef = useScrollRouter(sectionId);
 

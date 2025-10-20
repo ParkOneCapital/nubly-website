@@ -1,9 +1,10 @@
 import React from 'react';
 import FaqsAccordian from '@/components/FaqsAccordian';
 import { useScrollRouter } from '@/lib/hooks/useScrollRouter';
+import { SectionId } from '@/types';
 
 const Faqs = () => {
-  const sectionId = 'faqs';
+  const sectionId: SectionId = 'faqs';
   const sectionRef = useScrollRouter(sectionId);
 
   return (
