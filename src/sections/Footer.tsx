@@ -3,13 +3,17 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
+import { SectionId } from '@/types';
 
 const Footer = () => {
+  const sectionId: SectionId = 'footer';
   const router = useRouter();
   const currentYear = new Date().getFullYear();
 
   return (
-    <section id="footer" className="w-full flex flex-col justify-center py-3">
+    <section
+      id={sectionId}
+      className="w-full flex flex-col justify-center py-3">
       <div className="bg-base-grey flex justify-between items-center py-5 px-2 md:px-15">
         <div className="w-2/12 h-2/12 flex items-center pl-2">
           <Image
