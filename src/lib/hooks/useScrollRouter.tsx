@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSectionAnalytics } from '@/components/Tracking/Google/useSectionAnalytics';
+import { SectionId } from '@/types';
 
-export const useScrollRouter = (sectionId: string) => {
+export const useScrollRouter = (sectionId: SectionId) => {
   const router = useRouter();
   const pathname = usePathname();
   const sectionRef = useRef<HTMLElement>(null);

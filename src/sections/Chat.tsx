@@ -4,9 +4,10 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import ChatContainer from '@/components/ChatContainer';
 import { useScrollRouter } from '@/lib/hooks/useScrollRouter';
+import { SectionId } from '@/types';
 
 const Chat = () => {
-  const sectionId = 'chat';
+  const sectionId: SectionId = 'chat';
   const router = useRouter();
   const sectionRef = useScrollRouter(sectionId);
 
