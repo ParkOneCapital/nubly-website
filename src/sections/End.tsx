@@ -10,7 +10,7 @@ const End = () => {
   return (
     <section
       id={sectionId}
-      ref={sectionRef}
+      ref={sectionRef.ref}
       className="w-full md:pt-10 border-b-nubly-yellow border-b-1">
       <div>
         <h1 className="text-4xl md:text-5xl text-center font-extrabold text-nubly-blue pt-9 p-9">

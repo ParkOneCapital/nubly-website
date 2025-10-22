@@ -5,9 +5,9 @@ import { SectionId } from '@/types';
 
 interface SectionView {
   sectionId: string;
+  duration?: number;
   entryTime: number;
   exitTime?: number;
-  duration?: number;
 }
 
 export const useSectionAnalytics = (
@@ -26,7 +26,7 @@ export const useSectionAnalytics = (
       if (typeof window !== 'undefined' && window.dataLayer) {
         window.dataLayer.push({
           // 'event' is a special key that GTM uses for triggers.
-          event: `section_view_${sectionId}`,
+          event: 'section_view',
           section_id: data.sectionId,
           duration_ms: data.duration,
           entry_time: data.entryTime,
