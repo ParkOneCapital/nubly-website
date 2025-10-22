@@ -5,16 +5,23 @@ import SavingsGoalCardsContainer from '@/components/SavingsGoalCardContainer';
 import { useRouter } from 'next/navigation';
 import { useScrollRouter } from '@/lib/hooks/useScrollRouter';
 import { SectionId } from '@/types';
+import { GTM_Event_JoinWaitlistClicked } from '@/components/Tracking/Google/events';
 
 const Savings = () => {
   const sectionId: SectionId = 'savings';
   const router = useRouter();
   const sectionRef = useScrollRouter(sectionId);
 
+  const handleJoinWaitlistClick = async () => {
+    // Send GTM event
+    GTM_Event_JoinWaitlistClicked(sectionId);
+    router.push(`/join-waitlist?source=${sectionId}`);
+  };
+
   return (
     <section
       id={sectionId}
-      ref={sectionRef}
+      ref={sectionRef.ref}
       className="w-full bg-base-grey border-b-nubly-blue border-b-1 px-10 pt-10">
       <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
         <div className="md:w-1/2 text-left mb-8 md:mb-0 md:order-2 md:px-10 md:pb-20">
@@ -31,7 +38,7 @@ const Savings = () => {
           <button
             id="join-waitlist-2"
             className="bg-nubly-blue text-white font-bold text-xl px-5 py-3 rounded-4xl mt-8 w-full md:w-max hover:bg-nubly-blue/80 active:bg-nubly-blue/60"
-            onClick={() => router.push('/join-waitlist')}>
+            onClick={handleJoinWaitlistClick}>
             Join waitlist
           </button>
         </div>

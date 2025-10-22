@@ -5,16 +5,23 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useScrollRouter } from '@/lib/hooks/useScrollRouter';
 import { SectionId } from '@/types';
+import { GTM_Event_JoinWaitlistClicked } from '@/components/Tracking/Google/events';
 
 const Hero = () => {
   const sectionId: SectionId = 'home';
   const router = useRouter();
   const sectionRef = useScrollRouter(sectionId);
 
+  const handleJoinWaitlistClick = async () => {
+    // Send GTM event
+    GTM_Event_JoinWaitlistClicked(sectionId);
+    router.push(`/join-waitlist?source=${sectionId}`);
+  };
+
   return (
     <section
       id={sectionId}
-      ref={sectionRef}
+      ref={sectionRef.ref}
       className="w-full px-2 mb-30 md:my-20">
       <div className="container mx-auto flex flex-col md:flex-row justify-between items-center p-8">
         <div className="md:w-1/2 text-left mb-8 md:mb-0 md:ml-10">
@@ -36,7 +43,7 @@ const Hero = () => {
             <button
               id="join-waitlist-1"
               className="bg-nubly-yellow text-black font-bold text-xl px-5 py-3 rounded-4xl w-max mt-8 hover:bg-nubly-yellow/80 active:bg-nubly-yellow/60"
-              onClick={() => router.push('/join-waitlist')}>
+              onClick={handleJoinWaitlistClick}>
               Join waitlist
             </button>
           </div>

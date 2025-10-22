@@ -1,11 +1,13 @@
 import React from 'react';
-import FaqsAccordian from '@/components/FaqsAccordian';
+import FaqsAccordion from '@/components/FaqsAccordion';
 import { useScrollRouter } from '@/lib/hooks/useScrollRouter';
 import { SectionId } from '@/types';
 
 const Faqs = () => {
   const sectionId: SectionId = 'faqs';
-  const sectionRef = useScrollRouter(sectionId);
+
+  // This hook now gives us the ref for the section and whether it's visible
+  const { ref: sectionRef, isVisible } = useScrollRouter(sectionId);
 
   return (
     <section
@@ -18,7 +20,7 @@ const Faqs = () => {
         </h1>
       </div>
       <div className="md:ml-50 md:mr-50">
-        <FaqsAccordian />
+        <FaqsAccordion isSectionVisible={isVisible} />
       </div>
       <div className="text-sm/4 text-gray-700 font-light text-center md:ml-40 md:mr-40 mt-10">
         <h6>

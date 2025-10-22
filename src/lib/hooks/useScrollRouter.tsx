@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useSectionAnalytics } from '@/components/Tracking/Google/useSectionAnalytics';
+import { useSectionAnalytics } from '@/components/Tracking/Google/hooks/useSectionAnalytics';
 import { SectionId } from '@/types';
 
 export const useScrollRouter = (sectionId: SectionId) => {
@@ -47,5 +47,6 @@ export const useScrollRouter = (sectionId: SectionId) => {
     };
   }, [router, pathname, sectionId]);
 
-  return sectionRef;
+  // return sectionRef;
+  return { ref: sectionRef, isVisible };
 };
