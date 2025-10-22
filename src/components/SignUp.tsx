@@ -14,6 +14,11 @@ import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
+import { SectionId } from '@/types';
+import {
+  GTM_Event_SignupFormCancelled,
+  GTM_Event_SignupFormSubmitted,
+} from './Tracking/Google/events';
 
 const signUpSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -27,9 +32,13 @@ type FormErrors = {
   email?: string;
 };
 
+interface SignUpProps {
+  source?: SectionId | 'unknown';
+}
+
 const SAVE_SIGNUP_URL = `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTION_URL}/saveSignUp`;
 
-const SignUp = () => {
+const SignUp = ({ source = 'unknown' }: SignUpProps) => {
   const router = useRouter();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -38,6 +47,8 @@ const SignUp = () => {
   const [errors, setErrors] = useState<FormErrors>({});
 
   const handleSubmit = async () => {
+    GTM_Event_SignupFormSubmitted(source);
+
     setIsSubmitting(true);
     setErrors({});
 
@@ -83,6 +94,11 @@ const SignUp = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCancel = async () => {
+    GTM_Event_SignupFormCancelled(source);
+    router.push('/');
   };
 
   return (
@@ -143,7 +159,7 @@ const SignUp = () => {
           id="cancel-signup-form"
           type="button"
           variant="outline"
-          onClick={() => router.push('/')}
+          onClick={handleCancel}
           disabled={isSubmitting}
           className="w-1/2">
           Cancel
