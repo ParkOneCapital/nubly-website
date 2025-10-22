@@ -3,7 +3,6 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
-import { SectionId } from '@/types';
 
 const Footer = () => {
   const router = useRouter();

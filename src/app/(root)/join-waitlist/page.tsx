@@ -1,17 +1,22 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import SignUp from '@/components/SignUp';
 import { useSearchParams } from 'next/navigation';
 import { SectionId } from '@/types';
 
-const JoinWaitlistPage = () => {
+function JoinWaitlistForm() {
   const searchParams = useSearchParams();
   const source = (searchParams.get('source') as SectionId) || 'unknown';
+  return <SignUp source={source} />;
+}
 
+const JoinWaitlistPage = () => {
   return (
     <div className="w-full max-w-md mx-auto flex justify-center items-center h-screen">
-      <SignUp source={source} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <JoinWaitlistForm />
+      </Suspense>
     </div>
   );
 };
