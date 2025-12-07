@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import { twMerge } from 'tailwind-merge';
+import { Suspense } from 'react';
 import { PermissionsProvider } from '@/lib/hooks/Permissions.provider';
+import GoogleTagManager from '@/components/Tracking/Google/GoogleTagManager';
+import PageViewTracker from '@/components/Tracking/PageViewTracker';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -28,7 +30,24 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <PermissionsProvider>{children}</PermissionsProvider>
+        <PermissionsProvider>
+          <GoogleTagManager />
+          <Suspense fallback={null}>
+            <PageViewTracker />
+          </Suspense>
+
+          {/* GTM noscript fallback */}
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=GTM-K2G3J9SS`}
+              height="0"
+              width="0"
+              style={{ display: 'none', visibility: 'hidden' }}
+            />
+          </noscript>
+
+          {children}
+        </PermissionsProvider>
       </body>
     </html>
   );

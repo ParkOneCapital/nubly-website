@@ -15,7 +15,7 @@ const Home = () => {
   return (
     <div>
       <div>
-        <Hero />
+        <Hero section-id />
       </div>
       <div>
         <Savings />

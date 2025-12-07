@@ -1,8 +1,32 @@
+<<<<<<< HEAD
 export type ResourceCode =
   | 'view-app'
   | 'nubly-research'
   | 'data-room'
   | 'investor-relations';
+=======
+export declare global {
+  interface Window {
+    gtag: (
+      command: 'config' | 'event' | 'js' | 'set',
+      targetId: string,
+      config?: Record<string, string | number | boolean | undefined>,
+    ) => void;
+    dataLayer: Record<string, unknown>[];
+  }
+}
+
+export type SectionId =
+  | 'home'
+  | 'savings'
+  | 'investing'
+  | 'chat'
+  | 'notifications'
+  | 'end'
+  | 'faqs';
+
+export type ResourceCode = 'view-app' | 'nubly-research' | 'data-room';
+>>>>>>> main
 
 export type FirestoreCollection = 'accessCodes';
 

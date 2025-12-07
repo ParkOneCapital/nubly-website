@@ -1,9 +1,17 @@
 import React from 'react';
 import Image from 'next/image';
+import { useScrollRouter } from '@/lib/hooks/useScrollRouter';
+import { SectionId } from '@/types';
 
 const End = () => {
+  const sectionId: SectionId = 'end';
+  const sectionRef = useScrollRouter(sectionId);
+
   return (
-    <section className="w-full md:pt-10 border-b-nubly-yellow border-b-1">
+    <section
+      id={sectionId}
+      ref={sectionRef.ref}
+      className="w-full md:pt-10 border-b-nubly-yellow border-b-1">
       <div>
         <h1 className="text-4xl md:text-5xl text-center font-extrabold text-nubly-blue pt-9 p-9">
           Saving and Investing, all in one place.

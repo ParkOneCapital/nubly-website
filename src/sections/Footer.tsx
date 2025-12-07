@@ -9,7 +9,7 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <section className="w-full flex flex-col justify-center py-3">
+    <section id="footer" className="w-full flex flex-col justify-center py-3">
       <div className="bg-base-grey flex justify-between items-center py-5 px-2 md:px-15">
         <div className="w-2/12 h-2/12 flex items-center pl-2">
           <Image
@@ -23,6 +23,7 @@ const Footer = () => {
         <div className="flex items-start justify-center md:pr-10">
           <div>
             <Button
+              id="view-nubly-research"
               variant="link"
               className="text-xs md:text-base md:font-semibold"
               onClick={() => router.push('/nubly-research')}>
@@ -31,6 +32,7 @@ const Footer = () => {
           </div>
           <div>
             <Button
+              id="view-app-button"
               variant="link"
               className="text-xs md:text-base md:font-semibold"
               onClick={() => router.push('/view-app')}>
@@ -39,6 +41,7 @@ const Footer = () => {
           </div>
           <div>
             <Button
+              id="about-us-button"
               variant="link"
               className="text-xs md:text-base md:font-semibold"
               onClick={() => router.push('/about-us')}>
@@ -54,11 +57,12 @@ const Footer = () => {
         </div>
         <div className="flex pr-5 gap-2">
           <Link
-            href="https://www.tiktok.com/@livenubly"
+            id="footer-instagram"
+            href="https://www.instagram.com/livenubly/"
             target="_blank"
             rel="noopener noreferrer">
             <Image
-              src="/assets/logos/tik_tok.png"
+              src="/assets/logos/instagram.png"
               alt="Social Links"
               width={100}
               height={100}
@@ -66,11 +70,12 @@ const Footer = () => {
             />
           </Link>
           <Link
-            href="https://www.instagram.com/livenubly/"
+            id="footer-tik-tok"
+            href="https://www.tiktok.com/@livenubly"
             target="_blank"
             rel="noopener noreferrer">
             <Image
-              src="/assets/logos/instagram.png"
+              src="/assets/logos/tik_tok.png"
               alt="Social Links"
               width={100}
               height={100}

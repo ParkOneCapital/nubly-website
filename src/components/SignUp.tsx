@@ -14,6 +14,11 @@ import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
+import { SectionId } from '@/types';
+import {
+  GTM_Event_SignupFormCancelled,
+  GTM_Event_SignupFormSubmitted,
+} from './Tracking/Google/events';
 
 const signUpSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -27,9 +32,13 @@ type FormErrors = {
   email?: string;
 };
 
+interface SignUpProps {
+  source?: SectionId | 'unknown';
+}
+
 const SAVE_SIGNUP_URL = `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTION_URL}/saveSignUp`;
 
-const SignUp = () => {
+const SignUp = ({ source = 'unknown' }: SignUpProps) => {
   const router = useRouter();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -38,6 +47,8 @@ const SignUp = () => {
   const [errors, setErrors] = useState<FormErrors>({});
 
   const handleSubmit = async () => {
+    GTM_Event_SignupFormSubmitted(source);
+
     setIsSubmitting(true);
     setErrors({});
 
@@ -70,8 +81,7 @@ const SignUp = () => {
       });
 
       if (response.status === 200) {
-        window.alert('Successfully signed up');
-        router.push('/');
+        router.push('/waitlist-submitted');
       } else if (response.status === 409) {
         window.alert('A signup with this email already exists.');
       } else {
@@ -84,6 +94,11 @@ const SignUp = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCancel = async () => {
+    GTM_Event_SignupFormCancelled(source);
+    router.push('/');
   };
 
   return (
@@ -141,16 +156,16 @@ const SignUp = () => {
       </CardContent>
       <CardFooter className="flex-row gap-2">
         <Button
+          id="cancel-signup-form"
           type="button"
           variant="outline"
-          onClick={() => router.push('/')}
+          onClick={handleCancel}
           disabled={isSubmitting}
-          className="w-1/2"
-          // className="w-1/2 bg-nubly-blue/80 text-white hover:bg-nubly-blue active:bg-nubly-blue/40"
-        >
+          className="w-1/2">
           Cancel
         </Button>
         <Button
+          id="submit-signup-form"
           type="submit"
           disabled={isSubmitting}
           onClick={handleSubmit}
