@@ -34,7 +34,7 @@ const Investing = () => {
             your future plans.
             <br></br>
             <br></br>
-            Now you can focus on living, we&apos;ll handle the rest!
+            You can focus on now, we&apos;ll handle the future.
           </h3>
           <button
             id="join-waitlist-3"
