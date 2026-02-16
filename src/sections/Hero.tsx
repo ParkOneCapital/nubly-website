@@ -33,7 +33,7 @@ const Hero = () => {
               height={100}
             />
             <h1 className="text-5xl md:text-6xl text-left font-extrabold text-nubly-blue mt-4 font">
-              Money is in the Background
+              Money is{'\u00A0'}in{'\u00A0'}the Background
             </h1>
             <h3 className="text-2xl md:text-2xl mt-5 text-left">
               Meet Nubly, together we can save & invest{' '}
