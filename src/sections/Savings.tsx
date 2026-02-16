@@ -26,14 +26,14 @@ const Savings = () => {
       <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
         <div className="md:w-1/2 text-left mb-8 md:mb-0 md:order-2 md:px-10 md:pb-20">
           <h1 className="text-4xl md:pt-10 text-left font-extrabold text-nubly-blue mt-4">
-            Want something soon-ish?
-            <br></br>
-            Start saving today.
+            Save for something soon-ish
+            {/* Want something soon-ish? */}
+            {/* <br></br>
+            Start saving today. */}
           </h1>
           <h3 className="text-2xl pt-5 text-left">
             Whether you need to set aside cash for an emergency or go out with
-            friends, having a Nubly fund allows you to create short term goals &
-            begin saving now.
+            friends, having a Nubly fund allows you to begin saving now.
           </h3>
           <button
             id="join-waitlist-2"

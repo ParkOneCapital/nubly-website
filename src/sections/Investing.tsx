@@ -26,7 +26,7 @@ const Investing = () => {
       <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
         <div className="md:w-1/2 text-left mb-8 md:mb-0 md:order-1 md:px-10 md:pb-20">
           <h1 className="text-4xl md:pt-10 text-left font-extrabold text-nubly-blue mt-4">
-            What about my long term goals?
+            What about the long term?
           </h1>
           <h3 className="text-2xl pt-5 text-left">
             Your Nubly Portfolio takes the guesswork out of investing. We learn

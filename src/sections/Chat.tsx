@@ -26,13 +26,13 @@ const Chat = () => {
       <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
         <div className="md:w-1/2 text-left mb-8 md:mb-0 md:order-2 md:px-10 md:pb-20">
           <h1 className="text-4xl md:pt-10 text-left font-extrabold text-nubly-blue mt-4">
-            Save and invest - with a friendly AI coach by your side.
+            Plan, save, invest.
           </h1>
           <h3 className="text-2xl pt-5 text-left">
-            Nubly helps anyone build money goals — even on a tight budget. Open
-            an interest-earning savings account or a simple investment account.
-            Our chat explains everything in everyday words and keeps you on
-            track.
+            Nubly intelligently helps anyone build money goals, even tight
+            budgets. Our chat not only saves & invests for you but, it explains
+            finance in everyday words. All to help you stay in control and{' '}
+            <span className="text-nubly-green">live your best life</span>.
           </h3>
           <button
             id="join-waitlist-ai-chat"
