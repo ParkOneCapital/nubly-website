@@ -25,20 +25,22 @@ const Hero = () => {
       className="w-full px-2 mb-30 md:my-20">
       <div className="container mx-auto flex flex-col md:flex-row justify-between items-center p-8">
         <div className="md:w-1/2 text-left mb-8 md:mb-0 md:ml-10">
-          <div className="max-w-md text-left items-start">
+          <div className="max-w-xl text-left items-start">
             <Image
               src="/assets/logos/blue_nubly.png"
               alt="Nubly"
               width={100}
               height={100}
             />
-            <h1 className="text-5xl md:text-7xl text-left font-extrabold text-nubly-blue mt-4 font">
-              Let&apos;s Live <br />
-              Goal to Goal Instead.
+            <h1 className="text-5xl md:text-6xl text-left font-extrabold text-nubly-blue mt-4 font">
+              Money is in the Background
             </h1>
             <h3 className="text-2xl md:text-2xl mt-5 text-left">
-              Meet Nubly, together we can save & invest no matter where you are
-              on your life journey. Making progress is now simple.
+              Meet Nubly, together we can save & invest{' '}
+              <span className="text-nubly-green">automatically</span> no matter
+              how you earn. <br />
+              Staying ahead and living is now{' '}
+              <span className="text-nubly-green">simple</span>.
             </h3>
             <button
               id="join-waitlist-1"
