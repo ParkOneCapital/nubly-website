@@ -14,7 +14,8 @@ const End = () => {
       className="w-full md:pt-10 border-b-nubly-yellow border-b-1">
       <div>
         <h1 className="text-4xl md:text-5xl text-center font-extrabold text-nubly-blue pt-9 p-9">
-          Saving and Investing, all in one place.
+          Simple and easy, <br />
+          all in one place.
         </h1>
       </div>
       <div className="flex justify-center md:pt-5">
