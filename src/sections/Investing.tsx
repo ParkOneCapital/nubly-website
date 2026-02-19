@@ -32,9 +32,6 @@ const Investing = () => {
             Your Nubly Portfolio takes the guesswork out of investing. We learn
             about you & with a click of a button money can be allocated to match
             your future plans.
-            <br></br>
-            <br></br>
-            You can focus on now, we&apos;ll handle the future.
           </h3>
           <button
             id="join-waitlist-3"
