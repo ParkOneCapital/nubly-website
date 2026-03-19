@@ -49,3 +49,6 @@ firebase.rules
 firebase.json
 .firebaserc
 functions/lib
+
+#
+/secrets
