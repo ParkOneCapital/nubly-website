@@ -12,6 +12,17 @@ export default [
         project: ['./tsconfig.json', './tsconfig.dev.json'],
         sourceType: 'module',
       },
+      globals: {
+        process: 'readonly',
+        fetch: 'readonly',
+        console: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+      },
     },
     plugins: {
       '@typescript-eslint': tseslint,

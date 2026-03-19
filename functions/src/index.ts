@@ -31,6 +31,8 @@
 // //   response.send("Hello from Firebase!");
 // // });
 
+import dotenv from 'dotenv';
+dotenv.config();
 import * as admin from 'firebase-admin';
 import { onCall, HttpsError, onRequest } from 'firebase-functions/v2/https';
 import * as logger from 'firebase-functions/logger';
@@ -38,6 +40,8 @@ import { FieldValue } from 'firebase-admin/firestore';
 import cors from 'cors';
 
 const corsHandler = cors({ origin: true });
+
+const NUBLY_BACKEND_URL = process.env.NUBLY_BACKEND_URL ?? '';
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -148,6 +152,7 @@ export const researchAccessCode = onRequest(async (req, res) => {
 });
 
 export const saveSignUp = onRequest(async (req, res) => {
+  console.log('Saving signup to:', `${NUBLY_BACKEND_URL}`);
   corsHandler(req, res, async () => {
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -166,6 +171,7 @@ export const saveSignUp = onRequest(async (req, res) => {
 
     // Query for existing email (in case of legacy or duplicate signups)
     const signUpsRef = db.collection('signUps');
+    console.log('Checking for existing signup for email:', signUpsRef);
     const existing = await signUpsRef
       .where('email', '==', email)
       .limit(1)
@@ -188,6 +194,29 @@ export const saveSignUp = onRequest(async (req, res) => {
         lastName,
         createdAt: FieldValue.serverTimestamp(),
       });
+
+      if (NUBLY_BACKEND_URL) {
+        console.log(
+          'Sending waitlist signup email to:',
+          `${NUBLY_BACKEND_URL}`,
+        );
+        fetch(
+          `${NUBLY_BACKEND_URL}/api/v1/notifications/send-waitlist-signup-email`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email,
+              firstName,
+              lastName,
+              waitlistId: response.id,
+            }),
+          },
+        ).catch((err) => {
+          logger.error('Failed to send waitlist signup email:', err);
+        });
+      }
+
       res.status(200).json({
         status: 200,
         message: 'Successfully signed up',
