@@ -12,14 +12,24 @@ const config: Config = {
     screens: {
       sm: '375px',
       md: '768px',
-      lg: '1200px',
+      lg: '1024px',
+      xl: '1200px',
     },
     extend: {
+      maxWidth: {
+        section: '1200px',
+      },
       container: {
         center: true,
         padding: {
           DEFAULT: '20px',
           lg: '80px',
+        },
+        screens: {
+          sm: '100%',
+          md: '768px',
+          lg: '1024px',
+          xl: '1200px',
         },
       },
     },

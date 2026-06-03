@@ -2,6 +2,11 @@
 
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import Image from 'next/image';
+import {
+  featureSectionMockupWrapperClassName,
+  featureSectionOverlayImageClassName,
+  featureSectionPhoneImageClassName,
+} from '@/lib/sectionLayout';
 
 const InvestingGoalCardsContainer = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -35,32 +40,27 @@ const InvestingGoalCardsContainer = () => {
   }, []);
 
   return (
-    <div className="relative w-full flex items-center justify-center md:ml-20">
+    <div className={`${featureSectionMockupWrapperClassName} lg:mt-0`}>
       <Image
         src="/assets/app_screen_investing.png"
         alt="Investing"
         width={400}
         height={400}
+        className={featureSectionPhoneImageClassName}
       />
-      <div className="absolute inset-0 flex flex-col items-center justify-center pt-85 md:pt-95">
+      <div className="absolute inset-0 flex flex-col items-center justify-end pb-0">
         <div
           ref={containerRef}
           className={[
             'transform transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform',
             isRefVisible
               ? [
-                  // mobile base
-                  'translate-x-6 -translate-y-7 scale-100',
-                  // tablet / desktop base
-                  'md:translate-x-6 md:-translate-y-4 md:scale-100',
-                  'lg:translate-x-10 lg:-translate-y-10 lg:scale-100',
+                  'translate-x-6 -translate-y-15 scale-100',
+                  'lg:translate-x-10 lg:-translate-y-20 lg:scale-100',
                 ].join(' ')
               : [
-                  // mobile base
-                  'translate-x-0 -translate-y-4 scale-90',
-                  // tablet / desktop base
-                  'md:translate-x-1 md:-translate-y-8 md:scale-1.5',
-                  'lg:scale-90',
+                  'translate-x-1 -translate-y-15 scale-95',
+                  'lg:translate-x-0 lg:-translate-y-20 lg:scale-95',
                 ].join(' '),
           ].join(' ')}>
           <Image
@@ -68,7 +68,7 @@ const InvestingGoalCardsContainer = () => {
             alt="retirement_goal"
             width={350}
             height={350}
-            className="md:mt-10"
+            className={featureSectionOverlayImageClassName}
           />
         </div>
         <div
@@ -76,18 +76,12 @@ const InvestingGoalCardsContainer = () => {
             'transform transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform',
             isRefVisible
               ? [
-                  // mobile base
-                  '-translate-x-5 translate-y-1 scale-100',
-                  // tablet / desktop base
-                  'md:-translate-x-10 md:translate-y-10 md:scale-90',
-                  'lg:-translate-x-15 lg:translate-y-10 lg:scale-105',
+                  '-translate-x-5 -translate-y-5 scale-100',
+                  'lg:-translate-x-10 lg:-translate-y-5 lg:scale-100',
                 ].join(' ')
               : [
-                  // mobile base
-                  'translate-x-0 -translate-y-0 scale-90',
-                  // tablet / desktop base
-                  'md:translate-x-6 md:-translate-y-4 md:scale-85',
-                  'lg:translate-x-1 lg:translate-y-5 lg:scale-90',
+                  'translate-x-0 translate-y-0 scale-95',
+                  'lg:translate-x-0 lg:-translate-y-10 lg:scale-95',
                 ].join(' '),
           ].join(' ')}>
           <Image
@@ -95,7 +89,7 @@ const InvestingGoalCardsContainer = () => {
             alt="dream_car"
             width={350}
             height={350}
-            className="-mt-5 md:-mt-15"
+            className={`-mt-6 ${featureSectionOverlayImageClassName} lg:-mt-8`}
           />
         </div>
       </div>

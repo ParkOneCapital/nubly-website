@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import NotificationsCardContainer from '@/components/NotificationsCardContainer';
+import FeatureSection from '@/components/FeatureSection';
 import { useScrollRouter } from '@/lib/hooks/useScrollRouter';
 import { SectionId } from '@/types';
 import { GTM_Event_JoinWaitlistClicked } from '@/components/Tracking/Google/events';
@@ -18,32 +19,25 @@ const Notifications = () => {
   };
 
   return (
-    <section
-      id={sectionId}
-      ref={sectionRef.ref}
-      className="w-full bg-light-blue border-b-nubly-blue border-b-1 px-10 pt-10">
-      <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
-        <div className="md:w-1/2 text-left mb-8 md:mb-0 md:order-1 md:px-10 md:pb-20">
-          <h1 className="text-4xl md:pt-10 text-left font-extrabold text-nubly-blue mt-4">
-            Nudges to help keep you on track.
-          </h1>
-          <h3 className="text-2xl pt-5 text-left">
-            Our notification system will remind you when you have reached your
-            goals.
-          </h3>
-          <button
-            id="join-waitlist-4"
-            className="bg-nubly-blue text-white font-bold text-xl px-5 py-3 rounded-4xl mt-8 w-full md:w-max hover:bg-nubly-blue/80 active:bg-nubly-blue/60"
-            onClick={handleJoinWaitlistClick}>
-            Join waitlist
-          </button>
-        </div>
-
-        <div className="flex flex-col items-center md:order-2 md:px-20 md:items-end">
-          <NotificationsCardContainer />
-        </div>
-      </div>
-    </section>
+    <FeatureSection
+      sectionId={sectionId}
+      sectionRef={sectionRef.ref}
+      sectionClassName="bg-light-blue border-b-nubly-blue border-b-1"
+      imagePosition="right"
+      image={<NotificationsCardContainer />}
+      title="Stay on track without doing the math."
+      description={
+        <>
+          Nubly reminds you when transfers are coming up, goals are reached, or
+          your plan needs attention. <br />
+          <br />
+          As income changes, Nubly helps you keep moving.
+        </>
+      }
+      ctaId="join-waitlist-4"
+      ctaVariant="blue"
+      onCtaClick={handleJoinWaitlistClick}
+    />
   );
 };
 
