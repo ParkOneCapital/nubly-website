@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { featureSectionChatMockupWrapperClassName } from '@/lib/sectionLayout';
 
 type RevealOnScrollProps = {
   children: React.ReactNode;
@@ -58,8 +59,8 @@ const RevealOnScroll: React.FC<RevealOnScrollProps> = ({
 
 const ChatContainer = () => {
   return (
-    <div className="p-4 md:p-8">
-      <div className="w-full max-w-5xl">
+    <div className={featureSectionChatMockupWrapperClassName}>
+      <div className="w-full max-w-[400px] px-4 py-6 lg:px-0 lg:py-4">
         <div className="space-y-5">
           {/* AI Message 1 */}
           <RevealOnScroll className="flex justify-start">
@@ -130,7 +131,7 @@ const ChatContainer = () => {
                 alt="Mother's dinner"
                 width={500}
                 height={500}
-                className="pt-3"
+                className="h-auto w-full pt-3"
               />
             </div>
           </RevealOnScroll>

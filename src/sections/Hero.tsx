@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useScrollRouter } from '@/lib/hooks/useScrollRouter';
 import { SectionId } from '@/types';
 import { GTM_Event_JoinWaitlistClicked } from '@/components/Tracking/Google/events';
+import { featureSectionContentClassName } from '@/lib/sectionLayout';
 
 const Hero = () => {
   const sectionId: SectionId = 'home';
@@ -22,9 +23,9 @@ const Hero = () => {
     <section
       id={sectionId}
       ref={sectionRef.ref}
-      className="w-full px-2 mb-30 md:my-20">
-      <div className="container mx-auto flex flex-col md:flex-row justify-between items-center p-8">
-        <div className="md:w-1/2 text-left mb-8 md:mb-0 md:ml-10">
+      className="w-full px-2 mb-8 lg:my-20">
+      <div className={`${featureSectionContentClassName} p-8`}>
+        <div className="mb-8 w-full text-left lg:mb-0 lg:max-w-[520px] lg:flex-none lg:px-6 xl:max-w-[560px]">
           <div className="max-w-xl text-left items-start">
             <Image
               src="/assets/logos/blue_nubly.png"
@@ -32,15 +33,13 @@ const Hero = () => {
               width={100}
               height={100}
             />
-            <h1 className="text-5xl md:text-6xl text-left font-extrabold text-nubly-blue mt-4 font">
-              Money is{'\u00A0'}in{'\u00A0'}the Background
+            <h1 className="text-5xl lg:text-6xl text-left font-extrabold text-nubly-blue mt-4 font">
+              Your paycheck, <br />
+              automatically put to work
             </h1>
-            <h3 className="text-2xl md:text-2xl mt-5 text-left">
-              Meet Nubly, together we can save & invest{' '}
-              <span className="text-nubly-green">automatically</span> no matter
-              how you earn. <br />
-              Staying ahead and living is now{' '}
-              <span className="text-nubly-green">simple</span>.
+            <h3 className="mt-5 text-left text-2xl text-pretty">
+              Nubly safely moves money from each paycheck into savings and
+              investing goals before&nbsp;you&nbsp;spend&nbsp;it.
             </h3>
             <button
               id="join-waitlist-1"
@@ -51,23 +50,15 @@ const Hero = () => {
           </div>
         </div>
 
-        <div className="flex-1 w-full h-auto mt-[3%] md:mt-[-10%] relative">
-          <div className="w-[65%] h-full">
-            <Image
-              src="/assets/home_down_payment.png"
-              alt="Down payment on a home"
-              width={350}
-              height={350}
-            />
-          </div>
-          <div className="absolute bottom-[-75%] right-[1%] w-[65%] h-full">
-            <Image
-              src="/assets/trip_to_bahamas.png"
-              alt="A trip to the Bahamas"
-              width={350}
-              height={350}
-            />
-          </div>
+        <div className="mx-auto w-full max-w-[560px] shrink-0 lg:mx-0 lg:flex-none xl:max-w-[600px]">
+          <Image
+            src="/assets/hero_goal_images.png"
+            alt="Savings and investing goal cards"
+            width={2152}
+            height={1836}
+            className="h-auto w-full"
+            priority
+          />
         </div>
       </div>
     </section>

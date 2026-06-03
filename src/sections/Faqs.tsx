@@ -1,6 +1,7 @@
 import React from 'react';
 import FaqsAccordion from '@/components/FaqsAccordion';
 import { useScrollRouter } from '@/lib/hooks/useScrollRouter';
+import { faqSectionContentClassName } from '@/lib/sectionLayout';
 import { SectionId } from '@/types';
 
 const Faqs = () => {
@@ -19,10 +20,11 @@ const Faqs = () => {
           FAQs
         </h1>
       </div>
-      <div className="md:ml-50 md:mr-50">
+      <div className={faqSectionContentClassName}>
         <FaqsAccordion isSectionVisible={isVisible} />
       </div>
-      <div className="text-sm/4 text-gray-700 font-light text-center md:ml-40 md:mr-40 mt-10">
+      <div
+        className={`${faqSectionContentClassName} mt-10 text-center text-sm/4 font-light text-gray-700`}>
         <h6>
           All investing involves risk, including the possible loss of money you
           invest, and past performance does not guarantee future performance.

@@ -16,13 +16,13 @@ const Home = () => {
         <Hero section-id />
       </div>
       <div>
+        <Chat />
+      </div>
+      <div>
         <Savings />
       </div>
       <div>
         <Investing />
-      </div>
-      <div>
-        <Chat />
       </div>
       <div>
         <Notifications />
