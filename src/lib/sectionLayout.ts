@@ -28,6 +28,9 @@ export const featureSectionPhoneImageClassName =
   'block h-auto w-[280px] shrink-0 sm:w-[320px] lg:w-[400px]';
 
 export const featureSectionOverlayImageClassName = 'h-auto w-full shrink-0';
+export const mockupOverlayLayerClassName = 'pointer-events-none absolute inset-0';
+export const mockupSlotMotionBaseClassName =
+  'transform transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transition-none motion-reduce:translate-x-0 motion-reduce:translate-y-0 motion-reduce:scale-100';
 
 export const faqSectionContentClassName = 'mx-auto w-full max-w-3xl';
 

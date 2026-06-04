@@ -47,6 +47,9 @@
   --color-light-blue: var(--light-blue);
   --color-blue-overlay: var(--blue-overlay);
   --color-yellow-overlay: var(--yellow-overlay);
+  --motion-mockup-duration-token: var(--motion-mockup-duration);
+  --motion-mockup-ease-token: var(--motion-mockup-ease);
+  --motion-mockup-scale-from-token: var(--motion-mockup-scale-from);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -97,6 +100,9 @@
   --light-blue: #eef9ff;
   --blue-overlay: rgb(16, 90, 144, 0.7);
   --yellow-overlay: rgb(237, 156, 0, 0.34);
+  --motion-mockup-duration: 1000ms;
+  --motion-mockup-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-mockup-scale-from: 0.95;
 }
 
 .dark {
