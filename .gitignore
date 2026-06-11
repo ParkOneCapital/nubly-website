@@ -49,3 +49,7 @@ firebase.rules
 firebase.json
 .firebaserc
 functions/lib
+
+.cursor
+.cursor/
+.cursorrules

@@ -1,3 +1,6 @@
+# Copied from ../shared/feedback during build
+src/shared/
+
 # Compiled JavaScript files
 lib/**/*.js
 lib/**/*.js.map
