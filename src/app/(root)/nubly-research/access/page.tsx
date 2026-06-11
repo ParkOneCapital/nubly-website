@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AccessRequestObject, LocalStorageKey } from '@/types';
+import { AccessRequestObject, VerifyAccessResponse } from '@/types';
 import {
   getLocalStorageWithExpiry,
   setLocalStorageWithExpiry,
@@ -23,7 +23,7 @@ import { z } from 'zod';
 
 const VERIFY_ACCESS_CODE_URL = `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTION_URL}/verifyAccess`;
 const SAVE_RESEARCH_LOGIN_ATTEMPT_URL = `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTION_URL}/saveResearchLoginAttempt`;
-const ACCESS_KEY: LocalStorageKey = 'nubly-research-access-granted';
+const ACCESS_KEY = 'nubly-research-access-granted' as const;
 
 const accessCodeSchema = z.object({
   accessCode: z.string().min(1, 'Access code is required'),
@@ -89,7 +89,7 @@ export default function AccessPage() {
         body: JSON.stringify(accessRequestObject),
       });
 
-      const data = await response.json();
+      const data: VerifyAccessResponse = await response.json();
 
       if (response.ok) {
         await fetch(SAVE_RESEARCH_LOGIN_ATTEMPT_URL, {
@@ -107,7 +107,7 @@ export default function AccessPage() {
           }),
         });
 
-        if (data.hasPermission) {
+        if (data.hasPermission && data.accessCode && data.permisions) {
           // On success, save the access grant to browser storage
           setLocalStorageWithExpiry(ACCESS_KEY, 'true');
           setLocalStorageWithExpiry('accessCode', data.accessCode);

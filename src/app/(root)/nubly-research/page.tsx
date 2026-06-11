@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import { getLocalStorageWithExpiry } from '@/lib/utils';
 import CardContainer from '@/components/CardContainer';
 import { usePermissions } from '@/lib/hooks/Permissions.provider';
-import { LocalStorageKey, AccessCodeObject } from '@/types';
+import { AccessCodeObject } from '@/types';
 import { Button } from '@/components/ui/button';
 
-const ACCESS_KEY: LocalStorageKey = 'nubly-research-access-granted';
+const ACCESS_KEY = 'nubly-research-access-granted' as const;
 
 const NublyResearchPage = () => {
   const router = useRouter();
@@ -21,7 +21,7 @@ const NublyResearchPage = () => {
     const permissions = getLocalStorageWithExpiry('permissions');
     const accessCode = getLocalStorageWithExpiry('accessCode');
 
-    if (accessGranted === 'true' && permissions) {
+    if (accessGranted === 'true' && permissions && accessCode) {
       setIsAuthorized(true);
       setPermissions(permissions);
       setAccessCode(accessCode);

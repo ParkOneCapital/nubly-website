@@ -45,6 +45,24 @@ export type LocalStorageKey =
   | 'permissions'
   | 'accessCode';
 
+export type LocalStorageValueMap = {
+  'nubly-research-access-granted': 'true';
+  'nubly-view-app-access-granted': 'true';
+  'nubly-data-room-access-granted': 'true';
+  'nubly-feedback-access-granted': 'true';
+  permissions: ResourcePermissions;
+  accessCode: AccessCodeObject;
+};
+
+/** Response shape from the verifyAccess Firebase function. */
+export type VerifyAccessResponse = {
+  hasPermission?: boolean;
+  error?: string;
+  /** Intentional API spelling — matches backend field name. */
+  permisions?: ResourcePermissions;
+  accessCode?: AccessCodeObject;
+};
+
 export interface AccessCodeFields {
   firstName: string;
   lastName: string;
