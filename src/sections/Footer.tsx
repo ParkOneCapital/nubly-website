@@ -10,8 +10,8 @@ const Footer = () => {
 
   return (
     <section id="footer" className="w-full flex flex-col justify-center py-3">
-      <div className="bg-base-grey flex justify-between items-center py-5 px-2 md:px-15">
-        <div className="w-2/12 h-2/12 flex items-center pl-2">
+      <div className="bg-base-grey flex flex-wrap items-center justify-between gap-x-4 gap-y-3 py-5 px-3 md:px-15">
+        <div className="flex shrink-0 items-center pl-2">
           <Image
             src="/assets/logos/blue_nubly.png"
             alt="Nubly"
@@ -20,42 +20,43 @@ const Footer = () => {
           />
         </div>
 
-        <div className="flex items-start justify-center md:pr-10">
-          <div>
-            <Button
-              id="view-nubly-research"
-              variant="link"
-              className="text-xs md:text-base md:font-semibold"
-              onClick={() => router.push('/nubly-research')}>
-              Nubly Research
-            </Button>
-          </div>
-          <div>
-            <Button
-              id="view-app-button"
-              variant="link"
-              className="text-xs md:text-base md:font-semibold"
-              onClick={() => router.push('/view-app')}>
-              View App
-            </Button>
-          </div>
-          <div>
-            <Button
-              id="about-us-button"
-              variant="link"
-              className="text-xs md:text-base md:font-semibold"
-              onClick={() => router.push('/about-us')}>
-              About Us
-            </Button>
-          </div>
-        </div>
+        <nav className="flex w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 sm:w-auto sm:justify-end md:pr-10">
+          <Button
+            id="view-nubly-research"
+            variant="link"
+            className="h-auto px-2 py-1 text-xs whitespace-normal md:px-4 md:text-base md:font-semibold"
+            onClick={() => router.push('/nubly-research')}>
+            Nubly Research
+          </Button>
+          <Button
+            id="view-app-button"
+            variant="link"
+            className="h-auto px-2 py-1 text-xs whitespace-normal md:px-4 md:text-base md:font-semibold"
+            onClick={() => router.push('/view-app')}>
+            View App
+          </Button>
+          <Button
+            id="feedback-button"
+            variant="link"
+            className="h-auto px-2 py-1 text-xs whitespace-normal md:px-4 md:text-base md:font-semibold"
+            onClick={() => router.push('/feedback')}>
+            Feedback
+          </Button>
+          <Button
+            id="about-us-button"
+            variant="link"
+            className="h-auto px-2 py-1 text-xs whitespace-normal md:px-4 md:text-base md:font-semibold"
+            onClick={() => router.push('/about-us')}>
+            About Us
+          </Button>
+        </nav>
       </div>
 
-      <div className="flex items-center justify-between px-3 py-5 md:pr-20">
-        <div className="text-sm/4 text-gray-700 font-light text-center md:pl-10">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-3 py-5 md:pr-20">
+        <div className="min-w-0 text-sm/4 font-light text-gray-700 md:pl-10">
           <p>Copyright © {currentYear} Nubly. All rights reserved.</p>
         </div>
-        <div className="flex pr-5 gap-2">
+        <div className="flex shrink-0 gap-2 pr-5">
           <Link
             id="footer-instagram"
             href="https://www.instagram.com/livenubly/"

@@ -32,15 +32,50 @@
 // // });
 
 import * as admin from 'firebase-admin';
-import { onCall, HttpsError, onRequest } from 'firebase-functions/v2/https';
+import { onRequest } from 'firebase-functions/v2/https';
 import * as logger from 'firebase-functions/logger';
 import { FieldValue } from 'firebase-admin/firestore';
 import cors from 'cors';
+import { validateSaveFeedbackPayload } from './feedbackValidation';
 
 const corsHandler = cors({ origin: true });
 
 admin.initializeApp();
 const db = admin.firestore();
+
+type AccessRecordResult =
+  | {
+      exists: false;
+      hasPermission: false;
+      data: null;
+    }
+  | {
+      exists: true;
+      hasPermission: boolean;
+      data: FirebaseFirestore.DocumentData;
+    };
+
+async function getAccessRecord(
+  accessCode: string,
+  resource: string,
+): Promise<AccessRecordResult> {
+  const accessCodeRef = db.collection('accessCodes').doc(accessCode);
+  const doc = await accessCodeRef.get();
+
+  if (!doc.exists) {
+    return { exists: false, hasPermission: false, data: null };
+  }
+
+  const data = doc.data() ?? {};
+  const permissions = data.permissions;
+  const hasPermission =
+    !!permissions &&
+    typeof permissions === 'object' &&
+    !!permissions[resource] &&
+    permissions[resource].access === true;
+
+  return { exists: true, hasPermission, data };
+}
 
 export const verifyAccess = onRequest(async (req, res) => {
   corsHandler(req, res, async () => {
@@ -69,32 +104,31 @@ export const verifyAccess = onRequest(async (req, res) => {
     }
 
     try {
-      const accessCodeRef = db.collection('accessCodes').doc(accessCode);
-      const doc = await accessCodeRef.get();
-
-      if (!doc.exists) {
-        res.status(404).json({ hasPermission: false });
+      const accessRecord = await getAccessRecord(accessCode, resource);
+      if (!accessRecord.exists) {
+        res.status(404).json({
+          hasPermission: false,
+          error: 'Invalid access code.',
+        });
         return;
       }
 
-      const data = doc.data();
-      const permissions = data?.permissions;
-      const firstName = data?.firstName;
-      const lastName = data?.lastName;
+      const permissions = accessRecord.data.permissions;
+      const firstName = accessRecord.data.firstName;
+      const lastName = accessRecord.data.lastName;
+      const email = accessRecord.data.email;
 
-      if (
-        permissions &&
-        typeof permissions === 'object' &&
-        permissions[resource] &&
-        permissions[resource].access === true
-      ) {
+      if (accessRecord.hasPermission) {
         res.status(200).json({
           hasPermission: true,
           permisions: permissions,
-          accessCode: { accessCode, firstName, lastName },
+          accessCode: { accessCode, firstName, lastName, email },
         });
       } else {
-        res.status(200).json({ hasPermission: false });
+        res.status(200).json({
+          hasPermission: false,
+          error: `This access code does not include ${resource} access.`,
+        });
       }
     } catch (error) {
       logger.error('Error verifying access:', error);
@@ -204,25 +238,116 @@ export const saveSignUp = onRequest(async (req, res) => {
   });
 });
 
-export const savefeedback = onCall(async (request) => {
-  const data = request.data;
-  // TODO: Add server-side validation for the data object.
-  try {
-    const response = await db
-      .collection('feedback')
-      .add({ ...data, createdAt: FieldValue.serverTimestamp() });
-    return {
-      status: 200,
-      message: 'Feedback submitted',
-      response: { id: response.id },
-    };
-  } catch (error) {
-    logger.error('Error saving feedback:', error);
-    throw new HttpsError(
-      'internal',
-      'There was an error submitting feedback. Please try again',
-    );
-  }
+export const getFeedback = onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method !== 'POST') {
+      res.status(405).send('Method Not Allowed');
+      return;
+    }
+
+    const { accessCode } = req.body;
+    if (!accessCode || typeof accessCode !== 'string') {
+      res.status(400).json({ error: 'accessCode is required.' });
+      return;
+    }
+
+    try {
+      const accessRecord = await getAccessRecord(accessCode, 'feedback');
+      if (!accessRecord.exists) {
+        res.status(404).json({ hasPermission: false });
+        return;
+      }
+
+      if (!accessRecord.hasPermission) {
+        res.status(403).json({ hasPermission: false });
+        return;
+      }
+
+      const feedbackDoc = await db.collection('feedback').doc(accessCode).get();
+      if (!feedbackDoc.exists) {
+        res.status(200).json({ exists: false, feedback: null });
+        return;
+      }
+
+      res.status(200).json({
+        exists: true,
+        feedback: feedbackDoc.data(),
+      });
+    } catch (error) {
+      logger.error('Error fetching feedback:', error);
+      res.status(500).json({ error: 'Could not fetch feedback.' });
+    }
+  });
+});
+
+export const saveFeedback = onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method !== 'POST') {
+      res.status(405).send('Method Not Allowed');
+      return;
+    }
+
+    const validation = validateSaveFeedbackPayload(req.body);
+    if (!validation.success) {
+      res.status(400).json({ error: validation.error });
+      return;
+    }
+
+    const { accessCode, email, surveyVersion, responses } = validation.data;
+
+    try {
+      const accessRecord = await getAccessRecord(accessCode, 'feedback');
+      if (!accessRecord.exists) {
+        res.status(404).json({ hasPermission: false });
+        return;
+      }
+
+      if (!accessRecord.hasPermission) {
+        res.status(403).json({ hasPermission: false });
+        return;
+      }
+
+      const feedbackRef = db.collection('feedback').doc(accessCode);
+      const existingFeedbackDoc = await feedbackRef.get();
+
+      const payload = {
+        accessCode,
+        firstName: accessRecord.data.firstName ?? '',
+        lastName: accessRecord.data.lastName ?? '',
+        email,
+        surveyVersion,
+        responses,
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+
+      await feedbackRef.set(
+        existingFeedbackDoc.exists
+          ? payload
+          : { ...payload, createdAt: FieldValue.serverTimestamp() },
+        { merge: true },
+      );
+
+      res.status(200).json({
+        status: 200,
+        message: 'Feedback saved',
+        response: { id: accessCode },
+      });
+    } catch (error) {
+      logger.error('Error saving feedback:', error);
+      res.status(500).json({
+        status: 500,
+        message: 'There was an error saving feedback. Please try again.',
+      });
+    }
+  });
 });
 
 export const saveViewAppLoginAttempt = onRequest(async (req, res) => {

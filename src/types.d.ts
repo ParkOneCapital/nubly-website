@@ -18,9 +18,19 @@ export type SectionId =
   | 'end'
   | 'faqs';
 
-export type ResourceCode = 'view-app' | 'nubly-research' | 'data-room';
+export type ResourceCode =
+  | 'view-app'
+  | 'nubly-research'
+  | 'data-room'
+  | 'feedback';
 
-export type FirestoreCollection = 'accessCodes';
+export type FirestoreCollection =
+  | 'accessCodes'
+  | 'feedback'
+  | 'signUps'
+  | 'researchLogins'
+  | 'viewAppLogins'
+  | 'researchInteractions';
 
 export type AccessRequestObject = {
   accessCode: string;
@@ -31,12 +41,14 @@ export type LocalStorageKey =
   | 'nubly-research-access-granted'
   | 'nubly-view-app-access-granted'
   | 'nubly-data-room-access-granted'
+  | 'nubly-feedback-access-granted'
   | 'permissions'
   | 'accessCode';
 
 export interface AccessCodeFields {
   firstName: string;
   lastName: string;
+  email?: string;
   code: string;
   createdAt?: string;
   updatedAt?: string;
@@ -60,17 +72,54 @@ export type ViewAppPermissions = {
   view?: boolean;
 };
 
+export type FeedbackPermissions = {
+  access?: boolean;
+};
+
 export type ResourcePermissions = {
   'nubly-research'?: NublyResearchPermissions;
   'view-app'?: ViewAppPermissions;
+  feedback?: FeedbackPermissions;
   // Add more resources as needed
-  [resource: string]: NublyResearchPermissions | ViewAppPermissions | undefined; // fallback for extensibility
+  [resource: string]:
+    | NublyResearchPermissions
+    | ViewAppPermissions
+    | FeedbackPermissions
+    | Record<string, unknown>
+    | undefined; // fallback for extensibility
 };
 
 export type AccessCodeObject = {
   accessCode: string;
   firstName: string;
   lastName: string;
+  email?: string;
+};
+
+export type FeedbackQuestionType = 'single_select' | 'text';
+
+export type FeedbackResponseItem = {
+  type: FeedbackQuestionType;
+  value: string;
+};
+
+/** Keys are generic question ids (e.g. q1, q2), not semantic names. */
+export type FeedbackResponses = Record<string, FeedbackResponseItem>;
+
+export type FirebaseTimestamp = {
+  seconds: number;
+  nanoseconds: number;
+};
+
+export type FeedbackDocument = {
+  accessCode: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  surveyVersion: string;
+  responses: FeedbackResponses;
+  createdAt?: FirebaseTimestamp;
+  updatedAt?: FirebaseTimestamp;
 };
 
 /**
