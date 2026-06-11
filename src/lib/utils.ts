@@ -1,4 +1,8 @@
-import { LocalStorageKey } from '@/types';
+import {
+  AccessCodeObject,
+  LocalStorageKey,
+  LocalStorageValueMap,
+} from '@/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -13,11 +17,22 @@ function isClientSide(): boolean {
   return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
 }
 
-export function setLocalStorageWithExpiry(
-  key: LocalStorageKey,
-  value: string,
+export function isAccessCodeObject(value: unknown): value is AccessCodeObject {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'accessCode' in value &&
+    typeof (value as AccessCodeObject).accessCode === 'string' &&
+    typeof (value as AccessCodeObject).firstName === 'string' &&
+    typeof (value as AccessCodeObject).lastName === 'string'
+  );
+}
+
+export function setLocalStorageWithExpiry<K extends LocalStorageKey>(
+  key: K,
+  value: LocalStorageValueMap[K],
   ttl: number = DEFAULT_TTL,
-) {
+): boolean {
   if (!isClientSide()) {
     console.warn(`Attempted to set localStorage key "${key}" on server side`);
     return false;
@@ -39,7 +54,9 @@ export function setLocalStorageWithExpiry(
   }
 }
 
-export function getLocalStorageWithExpiry(key: LocalStorageKey) {
+export function getLocalStorageWithExpiry<K extends LocalStorageKey>(
+  key: K,
+): LocalStorageValueMap[K] | null {
   if (!isClientSide()) {
     console.warn(`Attempted to get localStorage key "${key}" on server side`);
     return null;
@@ -63,7 +80,7 @@ export function getLocalStorageWithExpiry(key: LocalStorageKey) {
       localStorage.removeItem(key);
       return null;
     }
-    return item.value;
+    return item.value as LocalStorageValueMap[K];
   } catch (error) {
     console.error(`Error getting localStorage key "${key}":`, error);
     try {

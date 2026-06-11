@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AccessCodeObject, AccessRequestObject, LocalStorageKey, ResourcePermissions } from '@/types';
+import { AccessRequestObject, VerifyAccessResponse } from '@/types';
 import {
   getLocalStorageWithExpiry,
   setLocalStorageWithExpiry,
@@ -26,7 +26,7 @@ import {
   postFirebaseFunction,
 } from '@/lib/firebaseFunctions';
 
-const ACCESS_KEY: LocalStorageKey = 'nubly-feedback-access-granted';
+const ACCESS_KEY = 'nubly-feedback-access-granted' as const;
 
 const accessCodeSchema = z.object({
   accessCode: z.string().min(1, 'Access code is required'),
@@ -34,13 +34,6 @@ const accessCodeSchema = z.object({
 
 type FormErrors = {
   accessCode?: string;
-};
-
-type VerifyAccessResponse = {
-  hasPermission?: boolean;
-  error?: string;
-  permisions?: ResourcePermissions;
-  accessCode?: AccessCodeObject;
 };
 
 export default function FeedbackAccessPage() {

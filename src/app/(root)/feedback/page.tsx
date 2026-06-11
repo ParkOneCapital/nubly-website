@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FeedbackSurveyForm from '@/components/FeedbackSurveyForm';
-import { AccessCodeObject, FeedbackDocument, LocalStorageKey } from '@/types';
+import { AccessCodeObject, FeedbackDocument } from '@/types';
 import { getLocalStorageWithExpiry } from '@/lib/utils';
 import { FeedbackFormInput, FeedbackFormValues } from '@/lib/feedback/schema';
 import {
@@ -24,7 +24,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
-const ACCESS_KEY: LocalStorageKey = 'nubly-feedback-access-granted';
+const ACCESS_KEY = 'nubly-feedback-access-granted' as const;
 
 const EMPTY_FORM_VALUES: FeedbackFormInput = {
   email: '',
@@ -53,14 +53,9 @@ export default function FeedbackPage() {
     const accessGranted = getLocalStorageWithExpiry(ACCESS_KEY);
     const storedAccessCode = getLocalStorageWithExpiry('accessCode');
 
-    if (
-      accessGranted === 'true' &&
-      storedAccessCode &&
-      typeof storedAccessCode === 'object' &&
-      'accessCode' in storedAccessCode
-    ) {
+    if (accessGranted === 'true' && storedAccessCode) {
       setIsAuthorized(true);
-      setAccessCodeData(storedAccessCode as AccessCodeObject);
+      setAccessCodeData(storedAccessCode);
       return;
     }
 

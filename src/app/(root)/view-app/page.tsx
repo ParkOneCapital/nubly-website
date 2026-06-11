@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getLocalStorageWithExpiry } from '@/lib/utils';
 import Video from '@/components/Video';
-import { AccessCodeObject, LocalStorageKey } from '@/types';
+import { AccessCodeObject } from '@/types';
 import VideoContainer from '@/components/VideoContainer';
 import { videoList } from '@/lib/videoList';
 
-const ACCESS_KEY: LocalStorageKey = 'nubly-view-app-access-granted';
+const ACCESS_KEY = 'nubly-view-app-access-granted' as const;
 
 const ViewAppPage = () => {
   const router = useRouter();
@@ -19,7 +19,7 @@ const ViewAppPage = () => {
     const accessGranted = getLocalStorageWithExpiry(ACCESS_KEY);
     const accessCode = getLocalStorageWithExpiry('accessCode');
 
-    if (accessGranted === 'true') {
+    if (accessGranted === 'true' && accessCode) {
       setIsAuthorized(true);
       setAccessCode(accessCode);
     } else {
