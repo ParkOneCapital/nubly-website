@@ -16,9 +16,32 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
+const siteDescription = 'Nubly automatically puts your paycheck to work';
+
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.livenubly.com'),
   title: 'Nubly',
-  description: 'Nubly',
+  description: siteDescription,
+  openGraph: {
+    title: 'Nubly',
+    description: siteDescription,
+    siteName: 'Nubly',
+    type: 'website',
+    images: [
+      {
+        url: '/assets/og.png',
+        width: 1200,
+        height: 630,
+        alt: 'Nubly',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Nubly',
+    description: siteDescription,
+    images: ['/assets/og.png'],
+  },
 };
 
 export default function RootLayout({
