@@ -131,7 +131,10 @@ export function validateSaveFeedbackPayload(payload: unknown): ValidationResult 
     const supportedVersions = Object.keys(SURVEY_DEFINITIONS).join(', ');
     return {
       success: false,
-      error: `surveyVersion is not supported. Received "${String(surveyVersion)}". Supported: ${supportedVersions}. Rebuild and restart Cloud Functions after updating the survey.`,
+      error:
+        `surveyVersion is not supported. Received "${String(surveyVersion)}". ` +
+        `Supported: ${supportedVersions}. Rebuild and restart Cloud Functions ` +
+        'after updating the survey.',
     };
   }
 

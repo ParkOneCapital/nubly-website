@@ -34,7 +34,7 @@
 import * as admin from 'firebase-admin';
 import { onRequest } from 'firebase-functions/v2/https';
 import * as logger from 'firebase-functions/logger';
-import { FieldValue } from 'firebase-admin/firestore';
+import { DocumentData, FieldValue } from 'firebase-admin/firestore';
 import cors from 'cors';
 import { validateSaveFeedbackPayload } from './feedbackValidation';
 
@@ -52,7 +52,7 @@ type AccessRecordResult =
   | {
       exists: true;
       hasPermission: boolean;
-      data: FirebaseFirestore.DocumentData;
+      data: DocumentData;
     };
 
 async function getAccessRecord(
@@ -238,7 +238,7 @@ export const saveSignUp = onRequest(async (req, res) => {
   });
 });
 
-export const getFeedback = onRequest(async (req, res) => {
+export const getFeedback = onRequest({ invoker: 'public' }, async (req, res) => {
   corsHandler(req, res, async () => {
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -284,7 +284,7 @@ export const getFeedback = onRequest(async (req, res) => {
   });
 });
 
-export const saveFeedback = onRequest(async (req, res) => {
+export const saveFeedback = onRequest({ invoker: 'public' }, async (req, res) => {
   corsHandler(req, res, async () => {
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');

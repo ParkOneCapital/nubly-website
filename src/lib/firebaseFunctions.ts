@@ -1,6 +1,13 @@
 const FIREBASE_FUNCTIONS_BASE =
   process.env.NEXT_PUBLIC_FIREBASE_FUNCTION_URL ?? '';
 
+const EMULATORS_HELP =
+  'Could not reach Firebase emulators. Run "npm run emulators" in one terminal and "npm run dev" in another, then try again.';
+
+function isLocalFunctionsBaseUrl(url: string): boolean {
+  return /localhost|127\.0\.0\.1/.test(url);
+}
+
 /**
  * In development, route calls through the Next.js dev server so phones on the
  * same network can reach Firebase emulators (localhost on the device is wrong).
@@ -21,6 +28,23 @@ export function isFirebaseFunctionsConfigured(): boolean {
   return (
     process.env.NODE_ENV === 'development' || FIREBASE_FUNCTIONS_BASE.length > 0
   );
+}
+
+function unreachableFunctionsMessage(): string {
+  if (process.env.NODE_ENV === 'development') {
+    return EMULATORS_HELP;
+  }
+
+  if (isLocalFunctionsBaseUrl(FIREBASE_FUNCTIONS_BASE)) {
+    return (
+      'This site build is configured for local Firebase emulators (localhost). ' +
+      'For local testing, use "npm run dev" with emulators running. ' +
+      'For production, remove NEXT_PUBLIC_FIREBASE_FUNCTION_URL from .env.local ' +
+      'and keep the emulator URL in .env.development.local only, then rebuild.'
+    );
+  }
+
+  return 'Network error. Please check your connection and try again.';
 }
 
 export class FirebaseFunctionRequestError extends Error {
@@ -49,15 +73,11 @@ export async function postFirebaseFunction<T>(
       body: JSON.stringify(body),
     });
   } catch {
-    if (process.env.NODE_ENV === 'development') {
-      throw new FirebaseFunctionRequestError(
-        'Could not reach Firebase emulators. Run "npm run emulators" in one terminal and "npm run dev" in another, then try again.',
-      );
-    }
+    throw new FirebaseFunctionRequestError(unreachableFunctionsMessage());
+  }
 
-    throw new FirebaseFunctionRequestError(
-      'Network error. Please check your connection and try again.',
-    );
+  if (!response.ok && process.env.NODE_ENV === 'development') {
+    throw new FirebaseFunctionRequestError(EMULATORS_HELP);
   }
 
   let data: T;
@@ -65,7 +85,9 @@ export async function postFirebaseFunction<T>(
     data = (await response.json()) as T;
   } catch {
     throw new FirebaseFunctionRequestError(
-      'Unexpected server response. Please try again.',
+      process.env.NODE_ENV === 'development'
+        ? EMULATORS_HELP
+        : 'Unexpected server response. Please try again.',
     );
   }
 

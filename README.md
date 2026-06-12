@@ -37,7 +37,7 @@ npm run dev
 The `functions/` folder has its own `npm run serve`, but that starts only the Functions emulator. For feedback testing (login + Firestore reads/writes), use `npm run emulators` from the root.
 
 - Emulator UI: [http://localhost:4000](http://localhost:4000)
-- Functions: `http://localhost:5001/livenublylanding/us-central1` (already set in `.env.local`)
+- Functions: `http://localhost:5001/livenublylanding/us-central1` (set in `.env.development.local`)
 - Firestore is seeded automatically on startup with access code `test123` (Bob Smith, `bob.smith@test.com`) — see [`scripts/emulator-seed-data.mjs`](scripts/emulator-seed-data.mjs). To re-seed while emulators are running: `npm run seed:emulator`
 
 Use `firebase-tools` (not `firebase`). The CLI is installed as a dev dependency.
