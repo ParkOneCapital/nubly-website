@@ -22,7 +22,9 @@ export type ResourceCode =
   | 'view-app'
   | 'nubly-research'
   | 'data-room'
-  | 'feedback';
+  | 'feedback'
+  | 'conference-room-participant'
+  | 'conference-room-interviewer';
 
 export type FirestoreCollection =
   | 'accessCodes'
@@ -42,16 +44,28 @@ export type LocalStorageKey =
   | 'nubly-view-app-access-granted'
   | 'nubly-data-room-access-granted'
   | 'nubly-feedback-access-granted'
+  | 'nubly-conference-room-participant-access-granted'
+  | 'nubly-conference-room-interviewer-access-granted'
   | 'permissions'
-  | 'accessCode';
+  | 'accessCode'
+  | 'conference-role'
+  | 'conference-access-code'
+  | 'conference-room-code'
+  | 'conference-display-name';
 
 export type LocalStorageValueMap = {
   'nubly-research-access-granted': 'true';
   'nubly-view-app-access-granted': 'true';
   'nubly-data-room-access-granted': 'true';
   'nubly-feedback-access-granted': 'true';
+  'nubly-conference-room-participant-access-granted': 'true';
+  'nubly-conference-room-interviewer-access-granted': 'true';
   permissions: ResourcePermissions;
   accessCode: AccessCodeObject;
+  'conference-role': 'participant' | 'interviewer';
+  'conference-access-code': string;
+  'conference-room-code': string;
+  'conference-display-name': string;
 };
 
 /** Response shape from the verifyAccess Firebase function. */
@@ -94,15 +108,23 @@ export type FeedbackPermissions = {
   access?: boolean;
 };
 
+export type ConferenceRoomPermissions = {
+  access?: boolean;
+  join?: boolean;
+};
+
 export type ResourcePermissions = {
   'nubly-research'?: NublyResearchPermissions;
   'view-app'?: ViewAppPermissions;
   feedback?: FeedbackPermissions;
+  'conference-room-participant'?: ConferenceRoomPermissions;
+  'conference-room-interviewer'?: ConferenceRoomPermissions;
   // Add more resources as needed
   [resource: string]:
     | NublyResearchPermissions
     | ViewAppPermissions
     | FeedbackPermissions
+    | ConferenceRoomPermissions
     | Record<string, unknown>
     | undefined; // fallback for extensibility
 };
