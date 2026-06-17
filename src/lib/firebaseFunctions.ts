@@ -32,7 +32,10 @@ export function isFirebaseFunctionsConfigured(): boolean {
 
 function unreachableFunctionsMessage(): string {
   if (process.env.NODE_ENV === 'development') {
-    return EMULATORS_HELP;
+    return (
+      'Could not reach Firebase emulators. Run "npm run emulators" on your Mac, ' +
+      'then open this page via your Mac LAN IP (for example http://192.168.1.6:3002), not localhost.'
+    );
   }
 
   if (isLocalFunctionsBaseUrl(FIREBASE_FUNCTIONS_BASE)) {

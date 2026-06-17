@@ -49,6 +49,13 @@ const Footer = () => {
             onClick={() => router.push('/about-us')}>
             About Us
           </Button>
+          <Button
+            id="conference-login-button"
+            variant="link"
+            className="h-auto px-2 py-1 text-xs whitespace-normal md:px-4 md:text-base md:font-semibold"
+            onClick={() => router.push('/conference-room/access')}>
+            Login
+          </Button>
         </nav>
       </div>
 
