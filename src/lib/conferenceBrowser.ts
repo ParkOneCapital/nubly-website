@@ -1,8 +1,9 @@
 import { isSafariBrowser } from './isSafariBrowser';
 
 /**
- * Chromium tolerates local host ICE in dev more than Firefox/Safari.
- * Prefer TURN relay so LiveKit embedded TURN credentials from join are used.
+ * Non-Chromium browsers used to prefer TURN relay in dev, but relay-only ICE
+ * requires TURN credentials from the join token. Prefer relay only when the
+ * token includes ice_servers / turn_url (see buildConferenceConnectOptions).
  */
 export function shouldPreferRelayIce(): boolean {
   if (typeof navigator === 'undefined') {
