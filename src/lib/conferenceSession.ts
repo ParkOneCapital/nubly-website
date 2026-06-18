@@ -54,6 +54,4 @@ export function clearConferenceSession(): void {
   removeLocalStorageItem('conference-room-code');
   removeLocalStorageItem('conference-display-name');
   removeLocalStorageItem(ACCESS_KEY);
-  removeLocalStorageItem('nubly-conference-room-participant-access-granted');
-  removeLocalStorageItem('nubly-conference-room-interviewer-access-granted');
 }
