@@ -18,7 +18,6 @@ export function buildConferenceConnectOptions(
   token: ConferenceTokenConnectInfo,
   options?: { preferRelayIce?: boolean },
 ): RoomConnectOptions {
-  const forceRelay = token.ice_transport_policy === 'relay';
   const iceServers =
     token.ice_servers?.length
       ? token.ice_servers
@@ -36,28 +35,29 @@ export function buildConferenceConnectOptions(
           ]
         : undefined;
 
-  const useRelayPolicy = forceRelay || options?.preferRelayIce === true;
+  // Relay-only ICE requires TURN credentials. Forcing relay without iceServers
+  // breaks Firefox/Safari in production where LiveKit uses direct UDP (no TURN).
+  if (!iceServers?.length) {
+    return {
+      autoSubscribe: true,
+      ...(options?.preferRelayIce ? { peerConnectionTimeout: 30_000 } : {}),
+    };
+  }
 
-  const rtcConfig =
-    useRelayPolicy || iceServers?.length
-      ? {
-          ...(useRelayPolicy ? { iceTransportPolicy: 'relay' as const } : {}),
-          ...(iceServers?.length
-            ? {
-                iceServers: iceServers.map((server) => ({
-                  ...server,
-                  ...(server.credential
-                    ? { credentialType: 'password' as const }
-                    : {}),
-                })),
-              }
-            : {}),
-        }
-      : undefined;
+  const useRelayPolicy =
+    token.ice_transport_policy === 'relay' || options?.preferRelayIce === true;
 
   return {
     autoSubscribe: true,
-    ...(options?.preferRelayIce ? { peerConnectionTimeout: 30_000 } : {}),
-    ...(rtcConfig ? { rtcConfig } : {}),
+    ...(useRelayPolicy ? { peerConnectionTimeout: 30_000 } : {}),
+    rtcConfig: {
+      ...(useRelayPolicy ? { iceTransportPolicy: 'relay' as const } : {}),
+      iceServers: iceServers.map((server) => ({
+        ...server,
+        ...(server.credential
+          ? { credentialType: 'password' as const }
+          : {}),
+      })),
+    },
   };
 }
