@@ -16,6 +16,7 @@ export type ConferenceTokenConnectInfo = {
 
 export function buildConferenceConnectOptions(
   token: ConferenceTokenConnectInfo,
+  options?: { preferRelayIce?: boolean },
 ): RoomConnectOptions {
   const forceRelay = token.ice_transport_policy === 'relay';
   const iceServers =
@@ -35,10 +36,12 @@ export function buildConferenceConnectOptions(
           ]
         : undefined;
 
+  const useRelayPolicy = forceRelay || options?.preferRelayIce === true;
+
   const rtcConfig =
-    forceRelay || iceServers?.length
+    useRelayPolicy || iceServers?.length
       ? {
-          ...(forceRelay ? { iceTransportPolicy: 'relay' as const } : {}),
+          ...(useRelayPolicy ? { iceTransportPolicy: 'relay' as const } : {}),
           ...(iceServers?.length
             ? {
                 iceServers: iceServers.map((server) => ({
@@ -54,6 +57,7 @@ export function buildConferenceConnectOptions(
 
   return {
     autoSubscribe: true,
+    ...(options?.preferRelayIce ? { peerConnectionTimeout: 30_000 } : {}),
     ...(rtcConfig ? { rtcConfig } : {}),
   };
 }

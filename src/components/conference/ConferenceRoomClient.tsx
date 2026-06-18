@@ -16,8 +16,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { buildConferenceConnectOptions } from '@/lib/buildConferenceConnectOptions';
-import { clearConferenceSession, getConferenceSession } from '@/lib/conferenceSession';
-import { isSafariBrowser } from '@/lib/isSafariBrowser';
+import { buildConferenceRoomOptions } from '@/lib/buildConferenceRoomOptions';
+import { shouldPreferRelayIce } from '@/lib/conferenceBrowser';
+import {
+  clearConferenceSession,
+  getConferenceSession,
+} from '@/lib/conferenceSession';
+import { getParticipantDisplayName } from '@/lib/conferenceParticipant';
+import { formatScreenShareError } from '@/lib/formatScreenShareError';
+import { resolveConferenceLiveKitUrl } from '@/lib/resolveConferenceLiveKitUrl';
 import {
   formatConferenceJoinError,
   resolveConferenceBackendUrl,
@@ -26,12 +33,14 @@ import {
   getMediaDevicesUnavailableMessage,
   isMediaDevicesAvailable,
 } from '@/lib/mediaDevicesSupport';
+import ConferenceFeedbackDialog from '@/components/conference/ConferenceFeedbackDialog';
 
 type ConferenceTokenResponse = {
   server_url: string;
   participant_token: string;
   room_name: string;
   participant_identity: string;
+  expected_avatar_identity?: string;
   ice_servers?: Array<{
     urls: string[];
     username?: string;
@@ -51,9 +60,17 @@ type EgressResponse = {
   message?: string;
 };
 
+type AvatarDispatchResponse = {
+  already_dispatched?: boolean;
+  expected_avatar_identity?: string;
+  linked_participant_identity?: string;
+  error?: string;
+  message?: string;
+};
+
 type Tile = {
   id: string;
-  identity: string;
+  displayName: string;
   isLocal: boolean;
   source: Track.Source;
   track: VideoTrack | null;
@@ -67,7 +84,9 @@ type AudioAttachment = {
 const parseAvatarListeningPaused = (metadata: string | undefined): boolean => {
   if (!metadata) return false;
   try {
-    const parsed = JSON.parse(metadata) as { avatar_listening_paused?: boolean };
+    const parsed = JSON.parse(metadata) as {
+      avatar_listening_paused?: boolean;
+    };
     return parsed.avatar_listening_paused === true;
   } catch {
     return false;
@@ -88,7 +107,7 @@ const getVideoTilesForParticipant = (
       const source = publication.source ?? Track.Source.Camera;
       tiles.push({
         id: `${participant.sid}-${publication.trackSid || source}`,
-        identity: participant.identity || participant.sid,
+        displayName: getParticipantDisplayName(participant),
         isLocal,
         source,
         track,
@@ -98,7 +117,7 @@ const getVideoTilesForParticipant = (
   if (tiles.length === 0) {
     tiles.push({
       id: `${participant.sid}-empty-camera`,
-      identity: participant.identity || participant.sid,
+      displayName: getParticipantDisplayName(participant),
       isLocal,
       source: Track.Source.Camera,
       track: null,
@@ -109,6 +128,7 @@ const getVideoTilesForParticipant = (
 
 function VideoTile({ tile }: { tile: Tile }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const isScreenShare = tile.source === Track.Source.ScreenShare;
 
   useEffect(() => {
     if (!videoRef.current || !tile.track) return;
@@ -122,8 +142,8 @@ function VideoTile({ tile }: { tile: Tile }) {
   return (
     <div className="rounded-lg border border-slate-300 bg-black/90 p-2">
       <p className="mb-1 text-xs text-slate-200">
-        {tile.identity} {tile.isLocal ? '(You)' : ''}{' '}
-        {tile.source === Track.Source.ScreenShare ? 'Screen' : 'Camera'}
+        {tile.displayName} {tile.isLocal ? '(You)' : ''}{' '}
+        {isScreenShare ? 'Screen' : 'Camera'}
       </p>
       {tile.track ? (
         <video
@@ -131,20 +151,29 @@ function VideoTile({ tile }: { tile: Tile }) {
           autoPlay
           playsInline
           muted={tile.isLocal}
-          className="h-48 w-full rounded object-cover"
+          className={
+            isScreenShare
+              ? 'max-h-[70vh] w-full rounded object-contain'
+              : 'aspect-[4/3] w-full rounded object-cover'
+          }
         />
       ) : (
-        <div className="flex h-48 items-center justify-center rounded bg-slate-800 text-sm text-slate-300">
-          {tile.source === Track.Source.ScreenShare
-            ? 'Screen share unavailable'
-            : 'Camera unavailable'}
+        <div
+          className={`flex items-center justify-center rounded bg-slate-800 text-sm text-slate-300 ${
+            isScreenShare ? 'min-h-[240px]' : 'aspect-[4/3] w-full'
+          }`}>
+          {isScreenShare ? 'Screen share unavailable' : 'Camera unavailable'}
         </div>
       )}
     </div>
   );
 }
 
-function RoomAudioAttachments({ attachments }: { attachments: AudioAttachment[] }) {
+function RoomAudioAttachments({
+  attachments,
+}: {
+  attachments: AudioAttachment[];
+}) {
   return (
     <div className="hidden">
       {attachments.map((attachment) => (
@@ -176,14 +205,26 @@ export default function ConferenceRoomClient() {
   const [isConnecting, setIsConnecting] = useState(true);
   const [avatarListeningPaused, setAvatarListeningPaused] = useState(false);
   const [tiles, setTiles] = useState<Tile[]>([]);
-  const [audioAttachments, setAudioAttachments] = useState<AudioAttachment[]>([]);
-  const [session, setSession] = useState<ReturnType<typeof getConferenceSession>>(null);
+  const [audioAttachments, setAudioAttachments] = useState<AudioAttachment[]>(
+    [],
+  );
+  const [session, setSession] =
+    useState<ReturnType<typeof getConferenceSession>>(null);
   const [hasLoadedSession, setHasLoadedSession] = useState(false);
   const [isUpdatingAvatarControl, setIsUpdatingAvatarControl] = useState(false);
+  const [isAvatarDispatching, setIsAvatarDispatching] = useState(false);
   const [isScreenSharePublishing, setIsScreenSharePublishing] = useState(false);
+  const [isMicrophoneEnabled, setIsMicrophoneEnabled] = useState(true);
+  const [isMicrophoneUpdating, setIsMicrophoneUpdating] = useState(false);
   const [isRecordingUpdating, setIsRecordingUpdating] = useState(false);
   const [egressId, setEgressId] = useState('');
   const [recordingStatus, setRecordingStatus] = useState('');
+  const [avatarStatus, setAvatarStatus] = useState('');
+  const [expectedAvatarIdentity, setExpectedAvatarIdentity] = useState('');
+  const [remoteParticipantIdentities, setRemoteParticipantIdentities] = useState<
+    string[]
+  >([]);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   const backendBaseUrl = useMemo(
     () =>
@@ -203,7 +244,11 @@ export default function ConferenceRoomClient() {
 
     const remoteTiles: Tile[] = [];
     const remoteAudioAttachments: AudioAttachment[] = [];
+    const remoteIdentities: string[] = [];
     for (const participant of targetRoom.remoteParticipants.values()) {
+      if (participant.identity) {
+        remoteIdentities.push(participant.identity);
+      }
       remoteTiles.push(...getVideoTilesForParticipant(participant, false));
       for (const publication of participant.audioTrackPublications.values()) {
         if (publication.audioTrack) {
@@ -217,6 +262,7 @@ export default function ConferenceRoomClient() {
 
     setTiles([...localTiles, ...remoteTiles]);
     setAudioAttachments(remoteAudioAttachments);
+    setRemoteParticipantIdentities(remoteIdentities);
   }, []);
 
   const updateAvatarControl = useCallback(
@@ -246,7 +292,11 @@ export default function ConferenceRoomClient() {
         }
         setAvatarListeningPaused(paused);
       } catch (value: unknown) {
-        setError(value instanceof Error ? value.message : 'Avatar control update failed.');
+        setError(
+          value instanceof Error
+            ? value.message
+            : 'Avatar control update failed.',
+        );
       } finally {
         setIsUpdatingAvatarControl(false);
       }
@@ -258,6 +308,30 @@ export default function ConferenceRoomClient() {
     setSession(getConferenceSession());
     setHasLoadedSession(true);
   }, []);
+
+  useEffect(() => {
+    if (!room) {
+      setIsMicrophoneEnabled(true);
+      return;
+    }
+
+    const syncMicrophoneState = () => {
+      setIsMicrophoneEnabled(room.localParticipant.isMicrophoneEnabled);
+    };
+
+    syncMicrophoneState();
+    room.on(RoomEvent.LocalTrackPublished, syncMicrophoneState);
+    room.on(RoomEvent.LocalTrackUnpublished, syncMicrophoneState);
+    room.on(RoomEvent.TrackMuted, syncMicrophoneState);
+    room.on(RoomEvent.TrackUnmuted, syncMicrophoneState);
+
+    return () => {
+      room.off(RoomEvent.LocalTrackPublished, syncMicrophoneState);
+      room.off(RoomEvent.LocalTrackUnpublished, syncMicrophoneState);
+      room.off(RoomEvent.TrackMuted, syncMicrophoneState);
+      room.off(RoomEvent.TrackUnmuted, syncMicrophoneState);
+    };
+  }, [room]);
 
   useEffect(() => {
     if (!hasLoadedSession) {
@@ -273,15 +347,14 @@ export default function ConferenceRoomClient() {
       return;
     }
 
-    let createdRoom: Room | null = null;
+    let disposed = false;
+    let activeRoom: Room | null = null;
+
     const joinRoom = async () => {
       setIsConnecting(true);
       setError('');
 
-      if (
-        typeof window !== 'undefined' &&
-        !isMediaDevicesAvailable()
-      ) {
+      if (typeof window !== 'undefined' && !isMediaDevicesAvailable()) {
         setError(
           getMediaDevicesUnavailableMessage(
             window.location.hostname,
@@ -292,16 +365,9 @@ export default function ConferenceRoomClient() {
         return;
       }
 
-      const livekitRoom = new Room(
-        isSafariBrowser()
-          ? {
-              // Safari is stricter about host ICE; dual PC mode is more reliable locally.
-              singlePeerConnection: false,
-              publishDefaults: { videoCodec: 'h264' },
-            }
-          : undefined,
-      );
-      createdRoom = livekitRoom;
+      const livekitRoom = new Room(buildConferenceRoomOptions());
+      activeRoom = livekitRoom;
+      const preferRelayIce = shouldPreferRelayIce();
       try {
         const tokenResponse = await fetch(
           `${backendBaseUrl}/api/v1/livekit/conference/token`,
@@ -321,19 +387,41 @@ export default function ConferenceRoomClient() {
             }),
           },
         );
-        const payload = (await tokenResponse.json()) as ConferenceTokenResponse & {
-          error?: string;
-          message?: string;
-        };
+        const payload =
+          (await tokenResponse.json()) as ConferenceTokenResponse & {
+            error?: string;
+            message?: string;
+          };
         if (!tokenResponse.ok) {
-          throw new Error(payload.message || payload.error || 'Unable to join room.');
+          throw new Error(
+            payload.message || payload.error || 'Unable to join room.',
+          );
         }
 
+        if (disposed) {
+          return;
+        }
+
+        const livekitUrl =
+          typeof window !== 'undefined'
+            ? resolveConferenceLiveKitUrl(
+                payload.server_url,
+                window.location.hostname,
+                window.location.protocol,
+              )
+            : payload.server_url;
+
         await livekitRoom.connect(
-          payload.server_url,
+          livekitUrl,
           payload.participant_token,
-          buildConferenceConnectOptions(payload),
+          buildConferenceConnectOptions(payload, { preferRelayIce }),
         );
+
+        if (disposed) {
+          await livekitRoom.disconnect();
+          return;
+        }
+
         await livekitRoom.localParticipant.setMicrophoneEnabled(true);
         await livekitRoom.localParticipant.setCameraEnabled(true);
 
@@ -347,29 +435,39 @@ export default function ConferenceRoomClient() {
         livekitRoom.on(RoomEvent.LocalTrackPublished, handleRoomRefresh);
         livekitRoom.on(RoomEvent.LocalTrackUnpublished, handleRoomRefresh);
         livekitRoom.on(RoomEvent.RoomMetadataChanged, () => {
-          setAvatarListeningPaused(parseAvatarListeningPaused(livekitRoom.metadata));
+          setAvatarListeningPaused(
+            parseAvatarListeningPaused(livekitRoom.metadata),
+          );
         });
 
-        setAvatarListeningPaused(parseAvatarListeningPaused(livekitRoom.metadata));
+        setAvatarListeningPaused(
+          parseAvatarListeningPaused(livekitRoom.metadata),
+        );
+        setExpectedAvatarIdentity(payload.expected_avatar_identity || '');
         refreshTiles(livekitRoom);
         setRoom(livekitRoom);
       } catch (value: unknown) {
-        setError(formatConferenceJoinError(value));
+        if (!disposed) {
+          setError(formatConferenceJoinError(value));
+        }
         try {
           await livekitRoom.disconnect();
         } catch {
           // ignore disconnect errors during failed startup
         }
       } finally {
-        setIsConnecting(false);
+        if (!disposed) {
+          setIsConnecting(false);
+        }
       }
     };
 
     void joinRoom();
 
     return () => {
-      if (createdRoom) {
-        void createdRoom.disconnect();
+      disposed = true;
+      if (activeRoom) {
+        void activeRoom.disconnect();
       }
     };
   }, [backendBaseUrl, hasLoadedSession, refreshTiles, router, session]);
@@ -383,24 +481,103 @@ export default function ConferenceRoomClient() {
     router.push('/conference-room/access');
   };
 
-  const publishScreenShare = async () => {
+  const toggleMicrophone = async () => {
+    if (!room || isMicrophoneUpdating) return;
+    setIsMicrophoneUpdating(true);
+    setError('');
+    try {
+      const nextEnabled = !room.localParticipant.isMicrophoneEnabled;
+      await room.localParticipant.setMicrophoneEnabled(nextEnabled);
+      setIsMicrophoneEnabled(nextEnabled);
+    } catch (value: unknown) {
+      setError(
+        value instanceof Error ? value.message : 'Unable to update microphone.',
+      );
+    } finally {
+      setIsMicrophoneUpdating(false);
+    }
+  };
+
+  const isDemoScreenShareEnabled =
+    process.env.NEXT_PUBLIC_DEMO_RECORDING_ENABLED === 'true';
+
+  const setScreenShareEnabled = async (enabled: boolean) => {
     if (!room || isScreenSharePublishing) return;
     setIsScreenSharePublishing(true);
     setError('');
     try {
-      await room.localParticipant.setScreenShareEnabled(true);
+      await room.localParticipant.setScreenShareEnabled(enabled);
       refreshTiles(room);
     } catch (value: unknown) {
-      setError(value instanceof Error ? value.message : 'Unable to start screen share.');
+      setError(formatScreenShareError(value, enabled && isDemoScreenShareEnabled));
     } finally {
       setIsScreenSharePublishing(false);
     }
   };
 
+  const targetParticipantIdentity = remoteParticipantIdentities.find((identity) =>
+    identity.startsWith('participant-'),
+  );
+  const hasAvatarParticipant = expectedAvatarIdentity
+    ? remoteParticipantIdentities.includes(expectedAvatarIdentity)
+    : remoteParticipantIdentities.some((identity) =>
+        identity.includes('avatar-agent'),
+      );
+
+  const dispatchAvatar = async () => {
+    if (!session || !backendBaseUrl || !room || isAvatarDispatching) return;
+    if (session.role !== 'moderator') {
+      setError('Only moderators can start the avatar.');
+      return;
+    }
+    if (!targetParticipantIdentity) {
+      setError('A participant must join before starting the avatar.');
+      return;
+    }
+
+    setIsAvatarDispatching(true);
+    setError('');
+    setAvatarStatus('');
+    try {
+      const response = await fetch(
+        `${backendBaseUrl}/api/v1/livekit/conference/avatar-dispatch`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            access_code: session.accessCode,
+            room_code: session.roomCode,
+            role: session.role,
+            participant_identity: targetParticipantIdentity,
+          }),
+        },
+      );
+      const payload = (await response.json()) as AvatarDispatchResponse;
+      if (!response.ok) {
+        throw new Error(
+          payload.message || payload.error || 'Unable to start avatar.',
+        );
+      }
+      if (payload.expected_avatar_identity) {
+        setExpectedAvatarIdentity(payload.expected_avatar_identity);
+      }
+      setAvatarStatus(
+        payload.already_dispatched ? 'Avatar already started.' : 'Avatar starting.',
+      );
+      refreshTiles(room);
+    } catch (value: unknown) {
+      setError(value instanceof Error ? value.message : 'Unable to start avatar.');
+    } finally {
+      setIsAvatarDispatching(false);
+    }
+  };
+
   const updateRecording = async (action: 'start' | 'stop') => {
     if (!session || !backendBaseUrl || isRecordingUpdating) return;
-    if (session.role !== 'interviewer') {
-      setError('Only interviewers can control demo recording.');
+    if (session.role !== 'moderator') {
+      setError('Only moderators can control demo recording.');
       return;
     }
     setIsRecordingUpdating(true);
@@ -428,9 +605,13 @@ export default function ConferenceRoomClient() {
         );
       }
       setEgressId(payload.egress_id || '');
-      setRecordingStatus(payload.status || (action === 'start' ? 'started' : 'stopped'));
+      setRecordingStatus(
+        payload.status || (action === 'start' ? 'started' : 'stopped'),
+      );
     } catch (value: unknown) {
-      setError(value instanceof Error ? value.message : 'Recording update failed.');
+      setError(
+        value instanceof Error ? value.message : 'Recording update failed.',
+      );
     } finally {
       setIsRecordingUpdating(false);
     }
@@ -438,6 +619,9 @@ export default function ConferenceRoomClient() {
 
   const screenShareTiles = tiles.filter(
     (tile) => tile.source === Track.Source.ScreenShare,
+  );
+  const isLocalScreenShareActive = screenShareTiles.some(
+    (tile) => tile.isLocal && Boolean(tile.track),
   );
   const cameraTiles = tiles.filter(
     (tile) => tile.source !== Track.Source.ScreenShare,
@@ -450,57 +634,123 @@ export default function ConferenceRoomClient() {
           <div>
             <CardTitle>Conference Room</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Room code: <span className="font-semibold">{session?.roomCode || '-'}</span>
+              Room code:{' '}
+              <span className="font-semibold">{session?.roomCode || '-'}</span>
             </p>
             <p className="text-xs text-muted-foreground">
-              Role: {session?.role || '-'} | Display name: {session?.displayName || '-'}
+              Role: {session?.role || '-'} | Display name:{' '}
+              {session?.displayName || '-'}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button
+              onClick={() => void toggleMicrophone()}
+              disabled={!room || isMicrophoneUpdating}
+              variant={isMicrophoneEnabled ? 'outline' : 'default'}>
+              {isMicrophoneUpdating
+                ? 'Updating Mic'
+                : isMicrophoneEnabled
+                  ? 'Mute'
+                  : 'Unmute'}
+            </Button>
+            {session?.role === 'moderator' && !hasAvatarParticipant ? (
+              <Button
+                onClick={() => void dispatchAvatar()}
+                disabled={
+                  !room || isAvatarDispatching || !targetParticipantIdentity
+                }>
+                {isAvatarDispatching ? 'Starting Avatar' : 'Start Avatar'}
+              </Button>
+            ) : null}
+            <Button
               onClick={() => void updateAvatarControl(!avatarListeningPaused)}
-              disabled={isUpdatingAvatarControl || !room}
+              disabled={
+                isUpdatingAvatarControl || !room || !hasAvatarParticipant
+              }
               variant={avatarListeningPaused ? 'default' : 'outline'}>
               {avatarListeningPaused ? 'Resume Avatar' : 'Pause Avatar'}
             </Button>
-            {process.env.NEXT_PUBLIC_DEMO_RECORDING_ENABLED === 'true' ? (
-              <Button
-                onClick={() => void publishScreenShare()}
-                disabled={!room || isScreenSharePublishing}
-                variant="outline">
-                {isScreenSharePublishing ? 'Starting Share' : 'Share Screen'}
-              </Button>
+            {isDemoScreenShareEnabled ? (
+              isLocalScreenShareActive ? (
+                <Button
+                  onClick={() => void setScreenShareEnabled(false)}
+                  disabled={!room || isScreenSharePublishing}
+                  variant="destructive">
+                  {isScreenSharePublishing
+                    ? 'Stopping Share'
+                    : 'Stop Screen Share'}
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => void setScreenShareEnabled(true)}
+                  disabled={!room || isScreenSharePublishing}
+                  variant="outline">
+                  {isScreenSharePublishing ? 'Starting Share' : 'Share Screen'}
+                </Button>
+              )
             ) : null}
             {process.env.NEXT_PUBLIC_DEMO_RECORDING_ENABLED === 'true' &&
-            session?.role === 'interviewer' ? (
+            session?.role === 'moderator' ? (
               egressId ? (
                 <Button
                   onClick={() => void updateRecording('stop')}
                   disabled={isRecordingUpdating}
                   variant="destructive">
-                  {isRecordingUpdating ? 'Stopping Recording' : 'Stop Recording'}
+                  {isRecordingUpdating
+                    ? 'Stopping Recording'
+                    : 'Stop Recording'}
                 </Button>
               ) : (
                 <Button
                   onClick={() => void updateRecording('start')}
                   disabled={isRecordingUpdating || !room}>
-                  {isRecordingUpdating ? 'Starting Recording' : 'Start Recording'}
+                  {isRecordingUpdating
+                    ? 'Starting Recording'
+                    : 'Start Recording'}
                 </Button>
               )
             ) : null}
+            <Button
+              onClick={() => setIsFeedbackOpen(true)}
+              variant="outline"
+              disabled={!session}>
+              Feedback
+            </Button>
             <Button onClick={() => void handleLeave()} variant="outline">
               Leave
             </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {isConnecting ? <p className="text-sm">Connecting to conference room...</p> : null}
+          {isConnecting ? (
+            <p className="text-sm">Connecting to conference room...</p>
+          ) : null}
           <p className="text-sm">
-            Avatar listening:{' '}
+            Microphone:{' '}
             <span className="font-semibold">
-              {avatarListeningPaused ? 'Paused' : 'Active'}
+              {isMicrophoneEnabled ? 'On' : 'Muted'}
             </span>
           </p>
+          <p className="text-sm">
+            Avatar:{' '}
+            <span className="font-semibold">
+              {hasAvatarParticipant ? 'Joined' : 'Not started'}
+            </span>
+            {hasAvatarParticipant ? ' | Listening: ' : null}
+            <span className="font-semibold">
+              {hasAvatarParticipant
+                ? avatarListeningPaused
+                  ? 'Paused'
+                  : 'Active'
+                : ''}
+            </span>
+          </p>
+          {avatarStatus ? (
+            <p className="text-sm">
+              Avatar status:{' '}
+              <span className="font-semibold">{avatarStatus}</span>
+            </p>
+          ) : null}
           {recordingStatus ? (
             <p className="text-sm">
               Recording status:{' '}
@@ -521,15 +771,22 @@ export default function ConferenceRoomClient() {
           ) : null}
           <section className="space-y-2">
             <h2 className="text-sm font-semibold">Participants</h2>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {cameraTiles.map((tile) => (
-              <VideoTile key={tile.id} tile={tile} />
+                <VideoTile key={tile.id} tile={tile} />
               ))}
             </div>
           </section>
         </CardContent>
       </Card>
+      {session ? (
+        <ConferenceFeedbackDialog
+          open={isFeedbackOpen}
+          onOpenChange={setIsFeedbackOpen}
+          accessCode={session.accessCode}
+          displayName={session.displayName}
+        />
+      ) : null}
     </main>
   );
 }
-

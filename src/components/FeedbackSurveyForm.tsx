@@ -35,6 +35,8 @@ type FeedbackSurveyFormProps = {
   submitError: string;
   submitSuccess: boolean;
   onSubmit: (values: FeedbackFormValues) => Promise<void>;
+  onCancel?: () => void;
+  onSuccessDismiss?: () => void;
 };
 
 type FormErrors = {
@@ -49,6 +51,8 @@ export default function FeedbackSurveyForm({
   submitError,
   submitSuccess,
   onSubmit,
+  onCancel,
+  onSuccessDismiss,
 }: FeedbackSurveyFormProps) {
   const router = useRouter();
   const [formValues, setFormValues] =
@@ -232,7 +236,9 @@ export default function FeedbackSurveyForm({
             <Button
               type="button"
               className="w-full bg-nubly-blue/80 text-white hover:bg-nubly-blue active:bg-nubly-blue/40"
-              onClick={() => router.push('/')}>
+              onClick={() =>
+                onSuccessDismiss ? onSuccessDismiss() : router.push('/')
+              }>
               OK
             </Button>
           </DialogFooter>
@@ -243,7 +249,7 @@ export default function FeedbackSurveyForm({
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push('/')}
+          onClick={() => (onCancel ? onCancel() : router.push('/'))}
           disabled={isSubmitting || isLoadingInitial}
           className="w-full md:w-1/2 md:flex-1">
           Cancel

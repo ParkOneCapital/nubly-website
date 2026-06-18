@@ -10,8 +10,16 @@ export const EMULATOR_SEED = {
       email: 'bob.smith@test.com',
       permissions: {
         feedback: { access: true },
-        'conference-room-participant': { access: true },
-        'conference-room-interviewer': { access: true },
+        'conference-room': { access: true, moderator: true },
+      },
+    },
+    participant456: {
+      firstName: 'Pat',
+      lastName: 'Jones',
+      email: 'pat.jones@test.com',
+      permissions: {
+        feedback: { access: true },
+        'conference-room': { access: true },
       },
     },
   },

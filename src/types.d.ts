@@ -23,8 +23,7 @@ export type ResourceCode =
   | 'nubly-research'
   | 'data-room'
   | 'feedback'
-  | 'conference-room-participant'
-  | 'conference-room-interviewer';
+  | 'conference-room';
 
 export type FirestoreCollection =
   | 'accessCodes'
@@ -44,6 +43,7 @@ export type LocalStorageKey =
   | 'nubly-view-app-access-granted'
   | 'nubly-data-room-access-granted'
   | 'nubly-feedback-access-granted'
+  | 'nubly-conference-room-access-granted'
   | 'nubly-conference-room-participant-access-granted'
   | 'nubly-conference-room-interviewer-access-granted'
   | 'permissions'
@@ -58,11 +58,10 @@ export type LocalStorageValueMap = {
   'nubly-view-app-access-granted': 'true';
   'nubly-data-room-access-granted': 'true';
   'nubly-feedback-access-granted': 'true';
-  'nubly-conference-room-participant-access-granted': 'true';
-  'nubly-conference-room-interviewer-access-granted': 'true';
+  'nubly-conference-room-access-granted': 'true';
   permissions: ResourcePermissions;
   accessCode: AccessCodeObject;
-  'conference-role': 'participant' | 'interviewer';
+  'conference-role': 'participant' | 'moderator';
   'conference-access-code': string;
   'conference-room-code': string;
   'conference-display-name': string;
@@ -111,14 +110,14 @@ export type FeedbackPermissions = {
 export type ConferenceRoomPermissions = {
   access?: boolean;
   join?: boolean;
+  moderator?: boolean;
 };
 
 export type ResourcePermissions = {
   'nubly-research'?: NublyResearchPermissions;
   'view-app'?: ViewAppPermissions;
   feedback?: FeedbackPermissions;
-  'conference-room-participant'?: ConferenceRoomPermissions;
-  'conference-room-interviewer'?: ConferenceRoomPermissions;
+  'conference-room'?: ConferenceRoomPermissions;
   // Add more resources as needed
   [resource: string]:
     | NublyResearchPermissions

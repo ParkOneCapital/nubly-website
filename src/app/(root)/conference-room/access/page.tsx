@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
@@ -15,9 +15,19 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
+  clearConferenceSession,
   saveConferenceSession,
   type ConferenceRole,
 } from '@/lib/conferenceSession';
+import { resolveConferenceBackendUrl } from '@/lib/resolveConferenceBackendUrl';
+import {
+  CONFERENCE_LOGIN_UNAVAILABLE_MESSAGE,
+  isConferenceBackendAvailable,
+} from '@/lib/conferenceBackendAvailability';
+import {
+  CONFERENCE_RESOURCE,
+  isConferenceModerator,
+} from '@/lib/conferencePermissions';
 import {
   FirebaseFunctionRequestError,
   isFirebaseFunctionsConfigured,
@@ -26,7 +36,6 @@ import {
 import { VerifyAccessResponse } from '@/types';
 
 const verifyStepSchema = z.object({
-  role: z.enum(['participant', 'interviewer']),
   accessCode: z.string().min(1, 'Access code is required'),
   displayName: z.string().min(1, 'Display name is required'),
 });
@@ -36,6 +45,9 @@ const roomStepSchema = z.object({
 });
 
 type VerifyStep = z.infer<typeof verifyStepSchema>;
+
+const buildSuggestedRoomCode = (): string =>
+  `session-${Math.random().toString(36).slice(2, 8)}`;
 
 export default function ConferenceRoomAccessPage() {
   const router = useRouter();
@@ -49,11 +61,37 @@ export default function ConferenceRoomAccessPage() {
   const [error, setError] = useState('');
   const [verifyErrors, setVerifyErrors] = useState<Partial<VerifyStep>>({});
   const [roomCodeError, setRoomCodeError] = useState('');
+  const [isCheckingLoginAvailability, setIsCheckingLoginAvailability] =
+    useState(false);
 
-  const headerText = useMemo(
-    () => (role === 'participant' ? 'Participant login' : 'Interviewer login'),
-    [role],
+  const backendBaseUrl = useMemo(
+    () =>
+      resolveConferenceBackendUrl(
+        process.env.NEXT_PUBLIC_NUBLY_BACKEND_URL,
+        typeof window !== 'undefined' ? window.location.hostname : undefined,
+        typeof window !== 'undefined' ? window.location.protocol : undefined,
+      ),
+    [],
   );
+
+  const isModerator = role === 'moderator';
+
+  const checkLoginAvailability = async (): Promise<boolean> => {
+    if (!backendBaseUrl) {
+      return false;
+    }
+
+    setIsCheckingLoginAvailability(true);
+    try {
+      return await isConferenceBackendAvailable(backendBaseUrl);
+    } finally {
+      setIsCheckingLoginAvailability(false);
+    }
+  };
+
+  useEffect(() => {
+    clearConferenceSession();
+  }, []);
 
   const handleVerify = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -61,7 +99,6 @@ export default function ConferenceRoomAccessPage() {
     setVerifyErrors({});
 
     const parsed = verifyStepSchema.safeParse({
-      role,
       accessCode: accessCode.trim(),
       displayName: displayName.trim(),
     });
@@ -85,24 +122,33 @@ export default function ConferenceRoomAccessPage() {
       return;
     }
 
+    const backendAvailable = await checkLoginAvailability();
+    if (!backendAvailable) {
+      setError(CONFERENCE_LOGIN_UNAVAILABLE_MESSAGE);
+      return;
+    }
+
     setIsVerifying(true);
     try {
-      const resource =
-        role === 'participant'
-          ? 'conference-room-participant'
-          : 'conference-room-interviewer';
       const { response, data } =
         await postFirebaseFunction<VerifyAccessResponse>('verifyAccess', {
           accessCode: parsed.data.accessCode,
-          resource,
+          resource: CONFERENCE_RESOURCE,
         });
       if (!response.ok || data.hasPermission !== true) {
         setError(data.error || 'Invalid access code.');
         return;
       }
+
+      const resolvedRole: ConferenceRole = isConferenceModerator(
+        data.permisions,
+      )
+        ? 'moderator'
+        : 'participant';
+      setRole(resolvedRole);
       setIsVerified(true);
-      if (role === 'participant' && !roomCode.trim()) {
-        setRoomCode(parsed.data.accessCode);
+      if (resolvedRole === 'moderator' && !roomCode.trim()) {
+        setRoomCode(buildSuggestedRoomCode());
       }
     } catch (value: unknown) {
       const error =
@@ -132,6 +178,51 @@ export default function ConferenceRoomAccessPage() {
 
     setIsEntering(true);
     try {
+      if (!backendBaseUrl) {
+        setError(CONFERENCE_LOGIN_UNAVAILABLE_MESSAGE);
+        return;
+      }
+
+      const backendAvailable = await checkLoginAvailability();
+      if (!backendAvailable) {
+        setError(CONFERENCE_LOGIN_UNAVAILABLE_MESSAGE);
+        return;
+      }
+
+      const response = await fetch(
+        `${backendBaseUrl}/api/v1/livekit/conference/room-check`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            access_code: accessCode.trim(),
+            room_code: parsedRoom.data.roomCode,
+            role,
+          }),
+        },
+      );
+      const payload = (await response.json().catch(() => null)) as {
+        can_enter?: boolean;
+        error?: string;
+        message?: string;
+      } | null;
+
+      if (!response.ok || payload?.can_enter !== true) {
+        if (!response.ok && response.status >= 500) {
+          setError(CONFERENCE_LOGIN_UNAVAILABLE_MESSAGE);
+          return;
+        }
+
+        setRoomCodeError(
+          payload?.message ||
+            payload?.error ||
+            'Unable to enter this room with that code.',
+        );
+        return;
+      }
+
       saveConferenceSession({
         role,
         accessCode: accessCode.trim(),
@@ -139,6 +230,8 @@ export default function ConferenceRoomAccessPage() {
         roomCode: parsedRoom.data.roomCode,
       });
       router.push('/conference-room');
+    } catch {
+      setError(CONFERENCE_LOGIN_UNAVAILABLE_MESSAGE);
     } finally {
       setIsEntering(false);
     }
@@ -151,32 +244,15 @@ export default function ConferenceRoomAccessPage() {
           <CardTitle>Conference Login</CardTitle>
           <CardDescription>
             {isVerified
-              ? role === 'participant'
-                ? 'Choose the room code to share with your interviewer.'
-                : 'Enter the participant room code to join the same room.'
+              ? isModerator
+                ? 'Create a room code and share it with participants.'
+                : 'Enter the room code your moderator shared.'
               : 'Verify access before joining the conference room.'}
           </CardDescription>
         </CardHeader>
         {!isVerified ? (
           <form onSubmit={handleVerify}>
             <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  type="button"
-                  variant={role === 'participant' ? 'default' : 'outline'}
-                  onClick={() => setRole('participant')}
-                  disabled={isVerifying}>
-                  Participant
-                </Button>
-                <Button
-                  type="button"
-                  variant={role === 'interviewer' ? 'default' : 'outline'}
-                  onClick={() => setRole('interviewer')}
-                  disabled={isVerifying}>
-                  Interviewer
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">{headerText}</p>
               <Input
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
@@ -192,11 +268,7 @@ export default function ConferenceRoomAccessPage() {
               <Input
                 value={accessCode}
                 onChange={(event) => setAccessCode(event.target.value)}
-                placeholder={
-                  role === 'participant'
-                    ? 'Participant access code'
-                    : 'Interviewer access code'
-                }
+                placeholder="Access code"
                 disabled={isVerifying}
                 required
               />
@@ -205,7 +277,11 @@ export default function ConferenceRoomAccessPage() {
                   {verifyErrors.accessCode}
                 </p>
               ) : null}
-              {error ? <p className="text-sm text-red-600">{error}</p> : null}
+              {error ? (
+                <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {error}
+                </p>
+              ) : null}
             </CardContent>
             <CardFooter className="flex flex-col items-center justify-center gap-2 py-5 md:flex-row">
               <Button
@@ -219,7 +295,7 @@ export default function ConferenceRoomAccessPage() {
               <Button
                 type="submit"
                 className="w-full bg-nubly-blue/80 text-white hover:bg-nubly-blue active:bg-nubly-blue/40 md:w-1/2 md:flex-1"
-                disabled={isVerifying}>
+                disabled={isVerifying || isCheckingLoginAvailability}>
                 {isVerifying ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
@@ -231,21 +307,42 @@ export default function ConferenceRoomAccessPage() {
         ) : (
           <form onSubmit={handleEnterRoom}>
             <CardContent className="space-y-3">
-              <Input
-                value={roomCode}
-                onChange={(event) => setRoomCode(event.target.value)}
-                placeholder={
-                  role === 'participant'
-                    ? 'Create room code'
-                    : 'Enter participant room code'
-                }
-                disabled={isEntering}
-                required
-              />
+              <label className="block space-y-1">
+                <span className="text-sm font-medium">
+                  {isModerator ? 'Create room code' : 'Room code'}
+                </span>
+                <Input
+                  value={roomCode}
+                  onChange={(event) => {
+                    setRoomCode(event.target.value);
+                    if (roomCodeError) {
+                      setRoomCodeError('');
+                    }
+                  }}
+                  placeholder={
+                    isModerator
+                      ? 'Choose a code to share'
+                      : 'Enter the code from your moderator'
+                  }
+                  disabled={isEntering}
+                  required
+                />
+              </label>
+              <p className="text-xs text-muted-foreground">
+                {isModerator
+                  ? 'Only moderators can open a room. Share this exact code with participants.'
+                  : 'Use the room code your moderator already opened.'}
+              </p>
               {roomCodeError ? (
-                <p className="text-sm text-red-600">{roomCodeError}</p>
+                <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {roomCodeError}
+                </p>
               ) : null}
-              {error ? <p className="text-sm text-red-600">{error}</p> : null}
+              {error ? (
+                <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {error}
+                </p>
+              ) : null}
             </CardContent>
             <CardFooter className="flex flex-col items-center justify-center gap-2 py-5 md:flex-row">
               <Button
@@ -259,11 +356,13 @@ export default function ConferenceRoomAccessPage() {
               <Button
                 type="submit"
                 className="w-full bg-nubly-blue/80 text-white hover:bg-nubly-blue active:bg-nubly-blue/40 md:w-1/2 md:flex-1"
-                disabled={isEntering}>
+                disabled={isEntering || isCheckingLoginAvailability}>
                 {isEntering ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
+                ) : isModerator ? (
+                  'Start Room'
                 ) : (
-                  'Enter Room'
+                  'Join Room'
                 )}
               </Button>
             </CardFooter>
