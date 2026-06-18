@@ -38,21 +38,6 @@ export type AccessRequestObject = {
   resource: ResourceCode;
 };
 
-export type LocalStorageKey =
-  | 'nubly-research-access-granted'
-  | 'nubly-view-app-access-granted'
-  | 'nubly-data-room-access-granted'
-  | 'nubly-feedback-access-granted'
-  | 'nubly-conference-room-access-granted'
-  | 'nubly-conference-room-participant-access-granted'
-  | 'nubly-conference-room-interviewer-access-granted'
-  | 'permissions'
-  | 'accessCode'
-  | 'conference-role'
-  | 'conference-access-code'
-  | 'conference-room-code'
-  | 'conference-display-name';
-
 export type LocalStorageValueMap = {
   'nubly-research-access-granted': 'true';
   'nubly-view-app-access-granted': 'true';
@@ -66,6 +51,8 @@ export type LocalStorageValueMap = {
   'conference-room-code': string;
   'conference-display-name': string;
 };
+
+export type LocalStorageKey = keyof LocalStorageValueMap;
 
 /** Response shape from the verifyAccess Firebase function. */
 export type VerifyAccessResponse = {
