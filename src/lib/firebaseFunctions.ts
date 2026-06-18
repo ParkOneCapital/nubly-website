@@ -1,9 +1,6 @@
 const FIREBASE_FUNCTIONS_BASE =
   process.env.NEXT_PUBLIC_FIREBASE_FUNCTION_URL ?? '';
 
-const EMULATORS_HELP =
-  'Could not reach Firebase emulators. Run "npm run emulators" in one terminal and "npm run dev" in another, then try again.';
-
 function isLocalFunctionsBaseUrl(url: string): boolean {
   return /localhost|127\.0\.0\.1/.test(url);
 }
@@ -79,17 +76,13 @@ export async function postFirebaseFunction<T>(
     throw new FirebaseFunctionRequestError(unreachableFunctionsMessage());
   }
 
-  if (!response.ok && process.env.NODE_ENV === 'development') {
-    throw new FirebaseFunctionRequestError(EMULATORS_HELP);
-  }
-
   let data: T;
   try {
     data = (await response.json()) as T;
   } catch {
     throw new FirebaseFunctionRequestError(
       process.env.NODE_ENV === 'development'
-        ? EMULATORS_HELP
+        ? unreachableFunctionsMessage()
         : 'Unexpected server response. Please try again.',
     );
   }

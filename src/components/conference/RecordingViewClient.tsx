@@ -13,10 +13,11 @@ import {
   Track,
   type VideoTrack,
 } from 'livekit-client';
+import { getParticipantDisplayName } from '@/lib/conferenceParticipant';
 
 type RecordingTile = {
   id: string;
-  identity: string;
+  displayName: string;
   source: Track.Source;
   track: VideoTrack | null;
 };
@@ -38,7 +39,7 @@ function getVideoTiles(
     const source = publication.source ?? Track.Source.Camera;
     tiles.push({
       id: `${participant.sid}-${publication.trackSid || source}`,
-      identity: participant.identity || participant.sid,
+      displayName: getParticipantDisplayName(participant),
       source,
       track,
     });
@@ -61,7 +62,7 @@ function RecordingVideoTile({ tile, primary }: { tile: RecordingTile; primary?: 
   return (
     <div className="flex h-full min-h-0 flex-col rounded-xl bg-black p-2 text-white">
       <div className="mb-2 text-sm font-semibold">
-        {tile.identity}{' '}
+        {tile.displayName}{' '}
         <span className="text-xs text-slate-300">
           {tile.source === Track.Source.ScreenShare ? 'Screen' : 'Camera'}
         </span>

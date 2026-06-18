@@ -46,4 +46,12 @@ describe('buildConferenceConnectOptions', () => {
       },
     ]);
   });
+
+  it('prefers relay ICE for Firefox and Safari without token ice servers', () => {
+    const options = buildConferenceConnectOptions({}, { preferRelayIce: true });
+
+    expect(options.rtcConfig?.iceTransportPolicy).toBe('relay');
+    expect(options.rtcConfig?.iceServers).toBeUndefined();
+    expect(options.peerConnectionTimeout).toBe(30_000);
+  });
 });
