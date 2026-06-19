@@ -17,4 +17,13 @@ describe('formatScreenShareError', () => {
 
     expect(message).toContain('System Settings');
   });
+
+  it('explains when getDisplayMedia is unavailable', () => {
+    const message = formatScreenShareError(
+      new Error('getDisplayMedia not supported'),
+      true,
+    );
+
+    expect(message).toContain('not supported');
+  });
 });

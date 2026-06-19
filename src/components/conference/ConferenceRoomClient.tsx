@@ -32,6 +32,7 @@ import {
 import {
   getMediaDevicesUnavailableMessage,
   isMediaDevicesAvailable,
+  isScreenShareSupported,
 } from '@/lib/mediaDevicesSupport';
 import ConferenceFeedbackDialog from '@/components/conference/ConferenceFeedbackDialog';
 
@@ -64,6 +65,14 @@ type AvatarDispatchResponse = {
   already_dispatched?: boolean;
   expected_avatar_identity?: string;
   linked_participant_identity?: string;
+  error?: string;
+  message?: string;
+};
+
+type AvatarStopResponse = {
+  removed_identities?: string[];
+  deleted_dispatch_ids?: string[];
+  expected_avatar_identity?: string;
   error?: string;
   message?: string;
 };
@@ -213,6 +222,7 @@ export default function ConferenceRoomClient() {
   const [hasLoadedSession, setHasLoadedSession] = useState(false);
   const [isUpdatingAvatarControl, setIsUpdatingAvatarControl] = useState(false);
   const [isAvatarDispatching, setIsAvatarDispatching] = useState(false);
+  const [isAvatarStopping, setIsAvatarStopping] = useState(false);
   const [isScreenSharePublishing, setIsScreenSharePublishing] = useState(false);
   const [isMicrophoneEnabled, setIsMicrophoneEnabled] = useState(true);
   const [isMicrophoneUpdating, setIsMicrophoneUpdating] = useState(false);
@@ -500,6 +510,8 @@ export default function ConferenceRoomClient() {
 
   const isDemoScreenShareEnabled =
     process.env.NEXT_PUBLIC_DEMO_RECORDING_ENABLED === 'true';
+  const canShareScreen =
+    isDemoScreenShareEnabled && isScreenShareSupported();
 
   const setScreenShareEnabled = async (enabled: boolean) => {
     if (!room || isScreenSharePublishing) return;
@@ -515,9 +527,15 @@ export default function ConferenceRoomClient() {
     }
   };
 
-  const targetParticipantIdentity = remoteParticipantIdentities.find((identity) =>
-    identity.startsWith('participant-'),
-  );
+  const targetParticipantIdentity = (() => {
+    const localIdentity = room?.localParticipant.identity;
+    if (localIdentity?.startsWith('participant-')) {
+      return localIdentity;
+    }
+    return remoteParticipantIdentities.find((identity) =>
+      identity.startsWith('participant-'),
+    );
+  })();
   const hasAvatarParticipant = expectedAvatarIdentity
     ? remoteParticipantIdentities.includes(expectedAvatarIdentity)
     : remoteParticipantIdentities.some((identity) =>
@@ -526,10 +544,6 @@ export default function ConferenceRoomClient() {
 
   const dispatchAvatar = async () => {
     if (!session || !backendBaseUrl || !room || isAvatarDispatching) return;
-    if (session.role !== 'moderator') {
-      setError('Only moderators can start the avatar.');
-      return;
-    }
     if (!targetParticipantIdentity) {
       setError('A participant must join before starting the avatar.');
       return;
@@ -571,6 +585,42 @@ export default function ConferenceRoomClient() {
       setError(value instanceof Error ? value.message : 'Unable to start avatar.');
     } finally {
       setIsAvatarDispatching(false);
+    }
+  };
+
+  const stopAvatar = async () => {
+    if (!session || !backendBaseUrl || !room || isAvatarStopping) return;
+
+    setIsAvatarStopping(true);
+    setError('');
+    setAvatarStatus('');
+    try {
+      const response = await fetch(
+        `${backendBaseUrl}/api/v1/livekit/conference/avatar-stop`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            access_code: session.accessCode,
+            room_code: session.roomCode,
+            role: session.role,
+          }),
+        },
+      );
+      const payload = (await response.json()) as AvatarStopResponse;
+      if (!response.ok) {
+        throw new Error(
+          payload.message || payload.error || 'Unable to stop avatar.',
+        );
+      }
+      setAvatarStatus('Avatar stopped.');
+      refreshTiles(room);
+    } catch (value: unknown) {
+      setError(value instanceof Error ? value.message : 'Unable to stop avatar.');
+    } finally {
+      setIsAvatarStopping(false);
     }
   };
 
@@ -653,7 +703,7 @@ export default function ConferenceRoomClient() {
                   ? 'Mute'
                   : 'Unmute'}
             </Button>
-            {session?.role === 'moderator' && !hasAvatarParticipant ? (
+            {!hasAvatarParticipant ? (
               <Button
                 onClick={() => void dispatchAvatar()}
                 disabled={
@@ -661,7 +711,14 @@ export default function ConferenceRoomClient() {
                 }>
                 {isAvatarDispatching ? 'Starting Avatar' : 'Start Avatar'}
               </Button>
-            ) : null}
+            ) : (
+              <Button
+                onClick={() => void stopAvatar()}
+                disabled={!room || isAvatarStopping}
+                variant="destructive">
+                {isAvatarStopping ? 'Stopping Avatar' : 'Stop Avatar'}
+              </Button>
+            )}
             <Button
               onClick={() => void updateAvatarControl(!avatarListeningPaused)}
               disabled={
@@ -670,7 +727,7 @@ export default function ConferenceRoomClient() {
               variant={avatarListeningPaused ? 'default' : 'outline'}>
               {avatarListeningPaused ? 'Resume Avatar' : 'Pause Avatar'}
             </Button>
-            {isDemoScreenShareEnabled ? (
+            {canShareScreen ? (
               isLocalScreenShareActive ? (
                 <Button
                   onClick={() => void setScreenShareEnabled(false)}
