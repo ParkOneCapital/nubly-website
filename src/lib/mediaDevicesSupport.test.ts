@@ -3,6 +3,7 @@ import {
   getMediaDevicesUnavailableMessage,
   isLocalDevHostname,
   isMediaDevicesAvailable,
+  isScreenShareSupported,
 } from './mediaDevicesSupport';
 
 describe('mediaDevicesSupport', () => {
@@ -25,6 +26,7 @@ describe('mediaDevicesSupport', () => {
     });
 
     expect(isMediaDevicesAvailable()).toBe(false);
+    expect(isScreenShareSupported()).toBe(false);
 
     Object.defineProperty(globalThis, 'navigator', {
       configurable: true,

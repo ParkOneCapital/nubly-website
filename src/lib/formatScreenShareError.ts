@@ -1,3 +1,5 @@
+import { getScreenShareUnavailableMessage } from './mediaDevicesSupport';
+
 export function formatScreenShareError(error: unknown, enabled: boolean): string {
   if (error instanceof Error) {
     if (/insufficient permissions/i.test(error.message)) {
@@ -19,6 +21,10 @@ export function formatScreenShareError(error: unknown, enabled: boolean): string
         'The browser blocked screen capture. On macOS, allow screen recording for this browser ' +
         'in System Settings → Privacy & Security → Screen & System Audio Recording, then retry.'
       );
+    }
+
+    if (/getDisplayMedia|display media|not supported/i.test(error.message)) {
+      return getScreenShareUnavailableMessage();
     }
 
     return error.message;

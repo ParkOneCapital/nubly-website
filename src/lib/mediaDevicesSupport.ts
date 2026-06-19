@@ -5,6 +5,38 @@ export function isMediaDevicesAvailable(): boolean {
   );
 }
 
+export function isScreenShareSupported(): boolean {
+  return (
+    typeof navigator !== 'undefined' &&
+    typeof navigator.mediaDevices?.getDisplayMedia === 'function'
+  );
+}
+
+export function isIOSDevice(): boolean {
+  if (typeof navigator === 'undefined') {
+    return false;
+  }
+
+  return (
+    /iPad|iPhone|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
+}
+
+export function getScreenShareUnavailableMessage(): string {
+  if (isIOSDevice()) {
+    return (
+      'Screen sharing is not available on iPhone or iPad in the browser. ' +
+      'Use a desktop computer (Chrome, Safari, or Firefox) to share your screen.'
+    );
+  }
+
+  return (
+    'Screen sharing is not supported in this browser. ' +
+    'Use Chrome, Firefox, or Safari on a desktop computer.'
+  );
+}
+
 export function isLocalDevHostname(hostname: string): boolean {
   return hostname === 'localhost' || hostname === '127.0.0.1';
 }
