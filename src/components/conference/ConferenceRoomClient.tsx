@@ -22,7 +22,13 @@ import {
   clearConferenceSession,
   getConferenceSession,
 } from '@/lib/conferenceSession';
-import { getParticipantDisplayName } from '@/lib/conferenceParticipant';
+import {
+  getConferenceVideoPublications,
+  getConferenceVideoSourceLabel,
+  getParticipantDisplayName,
+  isAvatarParticipantIdentity,
+  shouldShowParticipantInConferenceGrid,
+} from '@/lib/conferenceParticipant';
 import { formatScreenShareError } from '@/lib/formatScreenShareError';
 import { resolveConferenceLiveKitUrl } from '@/lib/resolveConferenceLiveKitUrl';
 import {
@@ -83,6 +89,7 @@ type Tile = {
   isLocal: boolean;
   source: Track.Source;
   track: VideoTrack | null;
+  participant: LocalParticipant | RemoteParticipant;
 };
 
 type AudioAttachment = {
@@ -106,30 +113,36 @@ const getVideoTilesForParticipant = (
   participant: LocalParticipant | RemoteParticipant,
   isLocal: boolean,
 ): Tile[] => {
-  const publications = participant.videoTrackPublications.values();
-  const tiles: Tile[] = [];
-  for (const publication of publications as Iterable<
-    LocalTrackPublication | RemoteTrackPublication
-  >) {
-    const track = publication.videoTrack;
-    if (track && track.kind === 'video') {
-      const source = publication.source ?? Track.Source.Camera;
-      tiles.push({
-        id: `${participant.sid}-${publication.trackSid || source}`,
-        displayName: getParticipantDisplayName(participant),
-        isLocal,
-        source,
-        track,
-      });
-    }
+  if (!shouldShowParticipantInConferenceGrid(participant, isLocal)) {
+    return [];
   }
-  if (tiles.length === 0) {
+
+  const tiles: Tile[] = [];
+  for (const publication of getConferenceVideoPublications(participant)) {
+    const track = publication.videoTrack;
+    if (!track) {
+      continue;
+    }
+
+    const source = publication.source ?? Track.Source.Camera;
+    tiles.push({
+      id: `${participant.sid}-${publication.trackSid || source}`,
+      displayName: getParticipantDisplayName(participant),
+      isLocal,
+      source,
+      track,
+      participant,
+    });
+  }
+
+  if (tiles.length === 0 && !isAvatarParticipantIdentity(participant.identity)) {
     tiles.push({
       id: `${participant.sid}-empty-camera`,
       displayName: getParticipantDisplayName(participant),
       isLocal,
       source: Track.Source.Camera,
       track: null,
+      participant,
     });
   }
   return tiles;
@@ -138,6 +151,10 @@ const getVideoTilesForParticipant = (
 function VideoTile({ tile }: { tile: Tile }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const isScreenShare = tile.source === Track.Source.ScreenShare;
+  const sourceLabel = getConferenceVideoSourceLabel(
+    tile.participant,
+    tile.source,
+  );
 
   useEffect(() => {
     if (!videoRef.current || !tile.track) return;
@@ -151,8 +168,7 @@ function VideoTile({ tile }: { tile: Tile }) {
   return (
     <div className="rounded-lg border border-slate-300 bg-black/90 p-2">
       <p className="mb-1 text-xs text-slate-200">
-        {tile.displayName} {tile.isLocal ? '(You)' : ''}{' '}
-        {isScreenShare ? 'Screen' : 'Camera'}
+        {tile.displayName} {tile.isLocal ? '(You)' : ''} {sourceLabel}
       </p>
       {tile.track ? (
         <video
@@ -394,6 +410,12 @@ export default function ConferenceRoomClient() {
               ...(process.env.NEXT_PUBLIC_DEMO_RECORDING_ENABLED === 'true'
                 ? { demo_recording: true }
                 : {}),
+              ...(process.env.NEXT_PUBLIC_LIVEKIT_AVATAR_PROVIDER?.trim()
+                ? {
+                    avatar_provider:
+                      process.env.NEXT_PUBLIC_LIVEKIT_AVATAR_PROVIDER.trim(),
+                  }
+                : {}),
             }),
           },
         );
@@ -565,6 +587,12 @@ export default function ConferenceRoomClient() {
             room_code: session.roomCode,
             role: session.role,
             participant_identity: targetParticipantIdentity,
+            ...(process.env.NEXT_PUBLIC_LIVEKIT_AVATAR_PROVIDER?.trim()
+              ? {
+                  avatar_provider:
+                    process.env.NEXT_PUBLIC_LIVEKIT_AVATAR_PROVIDER.trim(),
+                }
+              : {}),
           }),
         },
       );
