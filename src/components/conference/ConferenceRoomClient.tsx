@@ -67,6 +67,28 @@ type EgressResponse = {
   message?: string;
 };
 
+const formatRecordingStatus = (
+  status: string | undefined,
+  action: 'start' | 'stop',
+): string => {
+  const normalized = String(status ?? '').trim();
+  const labels: Record<string, string> = {
+    '0': 'starting',
+    '1': 'active',
+    '2': 'ending',
+    '3': 'complete',
+    '4': 'failed',
+    '5': 'aborted',
+    EGRESS_STARTING: 'starting',
+    EGRESS_ACTIVE: 'active',
+    EGRESS_ENDING: 'ending',
+    EGRESS_COMPLETE: 'complete',
+    EGRESS_FAILED: 'failed',
+    EGRESS_ABORTED: 'aborted',
+  };
+  return labels[normalized] || normalized || (action === 'start' ? 'started' : 'stopped');
+};
+
 type AvatarDispatchResponse = {
   already_dispatched?: boolean;
   expected_avatar_identity?: string;
@@ -682,10 +704,12 @@ export default function ConferenceRoomClient() {
           payload.message || payload.error || `Unable to ${action} recording.`,
         );
       }
-      setEgressId(payload.egress_id || '');
-      setRecordingStatus(
-        payload.status || (action === 'start' ? 'started' : 'stopped'),
-      );
+      if (action === 'stop') {
+        setEgressId('');
+      } else {
+        setEgressId(payload.egress_id || '');
+      }
+      setRecordingStatus(formatRecordingStatus(payload.status, action));
     } catch (value: unknown) {
       setError(
         value instanceof Error ? value.message : 'Recording update failed.',
