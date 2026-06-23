@@ -88,7 +88,7 @@ function RecordingVideoTile({ tile, primary }: { tile: RecordingTile; primary?: 
 
 function RecordingAudio({ attachments }: { attachments: AudioAttachment[] }) {
   return (
-    <div className="hidden">
+    <div className="pointer-events-none absolute h-px w-px overflow-hidden opacity-0">
       {attachments.map((attachment) => (
         <RecordingAudioElement key={attachment.id} track={attachment.track} />
       ))}
@@ -108,7 +108,72 @@ function RecordingAudioElement({ track }: { track: AudioTrack }) {
     };
   }, [track]);
 
-  return <audio ref={audioRef} autoPlay />;
+  return <audio ref={audioRef} autoPlay playsInline />;
+}
+
+const FRAME_DECODE_TIMEOUT_MS = 5000;
+const MIN_SUBSCRIBE_DELAY_MS = 500;
+
+async function hasDecodedVideoFrame(
+  publication: LocalTrackPublication | RemoteTrackPublication,
+): Promise<boolean> {
+  if (publication.kind !== Track.Kind.Video || !publication.videoTrack) {
+    return false;
+  }
+  const stats = await publication.videoTrack.getRTCStatsReport();
+  if (!stats) return false;
+  return Array.from(stats).some(
+    (item) =>
+      item[1].type === 'inbound-rtp' &&
+      'framesDecoded' in item[1] &&
+      Number(item[1].framesDecoded) > 0,
+  );
+}
+
+async function shouldStartRecording(room: Room, elapsedMs: number): Promise<boolean> {
+  let hasVideoTracks = false;
+  let hasDecodedFrames = false;
+  let hasSubscribedTracks = false;
+  let hasPublishedAudio = false;
+  let hasSubscribedAudio = false;
+
+  for (const participant of room.remoteParticipants.values()) {
+    for (const publication of participant.trackPublications.values()) {
+      if (publication.isSubscribed) {
+        hasSubscribedTracks = true;
+      }
+      if (publication.kind === Track.Kind.Audio) {
+        hasPublishedAudio = true;
+        if (publication.isSubscribed && publication.audioTrack) {
+          hasSubscribedAudio = true;
+        }
+      }
+      if (publication.kind === Track.Kind.Video) {
+        hasVideoTracks = true;
+        if (await hasDecodedVideoFrame(publication)) {
+          hasDecodedFrames = true;
+        }
+      }
+    }
+  }
+
+  const audioReady = !hasPublishedAudio || hasSubscribedAudio;
+  if (hasDecodedFrames && audioReady) {
+    return true;
+  }
+  if (
+    !hasVideoTracks &&
+    hasSubscribedTracks &&
+    elapsedMs > MIN_SUBSCRIBE_DELAY_MS &&
+    audioReady
+  ) {
+    return true;
+  }
+  if (elapsedMs > FRAME_DECODE_TIMEOUT_MS && hasSubscribedTracks && audioReady) {
+    return true;
+  }
+
+  return false;
 }
 
 export default function RecordingViewClient() {
@@ -134,7 +199,10 @@ export default function RecordingViewClient() {
     ];
     const nextAudioAttachments = remoteParticipants.flatMap((participant) =>
       [...participant.audioTrackPublications.values()]
-        .filter((publication) => Boolean(publication.audioTrack))
+        .filter(
+          (publication) =>
+            publication.isSubscribed && Boolean(publication.audioTrack),
+        )
         .map((publication) => ({
           id: `${participant.sid}-${publication.trackSid}`,
           track: publication.audioTrack as AudioTrack,
@@ -152,12 +220,24 @@ export default function RecordingViewClient() {
 
     const recordingRoom = new Room();
     let hasStartedRecording = false;
+    let startRecordingInterval: ReturnType<typeof setInterval> | undefined;
     const markReady = () => {
       refreshTiles(recordingRoom);
-      if (!hasStartedRecording) {
-        hasStartedRecording = true;
-        console.log('START_RECORDING');
+    };
+
+    const beginRecordingCapture = () => {
+      if (hasStartedRecording) return;
+      hasStartedRecording = true;
+      if (startRecordingInterval) {
+        clearInterval(startRecordingInterval);
+        startRecordingInterval = undefined;
       }
+      // Let React mount/play attached audio elements before Chrome captures.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          console.log('START_RECORDING');
+        });
+      });
     };
 
     recordingRoom.on(RoomEvent.TrackSubscribed, markReady);
@@ -172,12 +252,26 @@ export default function RecordingViewClient() {
       .then(() => {
         setRoom(recordingRoom);
         markReady();
+        const startTime = Date.now();
+        startRecordingInterval = setInterval(() => {
+          void shouldStartRecording(
+            recordingRoom,
+            Date.now() - startTime,
+          ).then((ready) => {
+            if (ready) {
+              beginRecordingCapture();
+            }
+          });
+        }, 100);
       })
       .catch((value: unknown) => {
         setError(value instanceof Error ? value.message : 'Unable to connect recorder.');
       });
 
     return () => {
+      if (startRecordingInterval) {
+        clearInterval(startRecordingInterval);
+      }
       console.log('END_RECORDING');
       void recordingRoom.disconnect();
     };
