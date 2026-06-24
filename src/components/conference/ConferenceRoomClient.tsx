@@ -48,10 +48,7 @@ import {
   isMediaDevicesAvailable,
   isScreenShareSupported,
 } from '@/lib/mediaDevicesSupport';
-import {
-  readConferenceAgentState,
-  shouldShowAvatarThinkingIndicator,
-} from '@/lib/conferenceAgentState';
+import { subscribeConferenceAgentThinking } from '@/lib/conferenceAgentState';
 import ConferenceFeedbackDialog from '@/components/conference/ConferenceFeedbackDialog';
 
 type ConferenceTokenResponse = {
@@ -256,7 +253,7 @@ function VideoTile({
         </div>
       )}
       {showThinkingOverlay ? (
-        <div className="absolute inset-2 flex items-center justify-center gap-2 rounded bg-black/50 px-3 text-sm text-white">
+        <div className="absolute inset-2 z-10 flex items-center justify-center gap-2 rounded bg-black/50 px-3 text-sm text-white">
           <Loader2 className="h-5 w-5 animate-spin" />
           <span>Thinking...</span>
         </div>
@@ -362,9 +359,6 @@ export default function ConferenceRoomClient() {
     setTiles([...localTiles, ...remoteTiles]);
     setAudioAttachments(remoteAudioAttachments);
     setRemoteParticipantIdentities(remoteIdentities);
-    setIsAvatarThinking(
-      shouldShowAvatarThinkingIndicator(readConferenceAgentState(targetRoom)),
-    );
   }, []);
 
   const updateAvatarControl = useCallback(
@@ -405,6 +399,15 @@ export default function ConferenceRoomClient() {
     },
     [backendBaseUrl, isUpdatingAvatarControl, session],
   );
+
+  useEffect(() => {
+    if (!room) {
+      setIsAvatarThinking(false);
+      return;
+    }
+
+    return subscribeConferenceAgentThinking(room, setIsAvatarThinking);
+  }, [room]);
 
   useEffect(() => {
     setSession(getConferenceSession());

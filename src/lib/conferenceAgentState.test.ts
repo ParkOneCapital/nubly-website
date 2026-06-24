@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   LIVEKIT_AGENT_STATE_ATTRIBUTE,
   LIVEKIT_PUBLISH_ON_BEHALF_ATTRIBUTE,
+  isConferenceMediaAgentParticipant,
   readConferenceAgentState,
   shouldShowAvatarThinkingIndicator,
 } from './conferenceAgentState';
@@ -14,13 +15,18 @@ function buildRoom(participants: Array<Record<string, unknown>>) {
       {
         kind: participant.kind,
         identity: participant.identity,
+        sid: `sid-${index}`,
         attributes: participant.attributes ?? {},
+        on: () => {},
+        off: () => {},
       },
     ]),
   );
 
   return {
     remoteParticipants,
+    on: () => {},
+    off: () => {},
   } as Parameters<typeof readConferenceAgentState>[0];
 }
 
@@ -41,6 +47,20 @@ describe('conferenceAgentState', () => {
     expect(shouldShowAvatarThinkingIndicator('speaking')).toBe(false);
   });
 
+  it('finds media agent by identity when participant kind is not agent yet', () => {
+    const room = buildRoom([
+      {
+        kind: ParticipantKind.STANDARD,
+        identity: 'agent-AJ_123',
+        attributes: {
+          [LIVEKIT_AGENT_STATE_ATTRIBUTE]: 'thinking',
+        },
+      },
+    ]);
+
+    expect(readConferenceAgentState(room)).toBe('thinking');
+  });
+
   it('ignores avatar worker participants that publish on behalf of the agent', () => {
     const room = buildRoom([
       {
@@ -54,5 +74,10 @@ describe('conferenceAgentState', () => {
     ]);
 
     expect(readConferenceAgentState(room)).toBeUndefined();
+    expect(
+      isConferenceMediaAgentParticipant(
+        room!.remoteParticipants.get('sid-0') as never,
+      ),
+    ).toBe(false);
   });
 });
