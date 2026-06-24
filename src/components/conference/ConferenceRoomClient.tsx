@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 import {
   type AudioTrack,
   type LocalParticipant,
@@ -23,12 +24,19 @@ import {
   getConferenceSession,
 } from '@/lib/conferenceSession';
 import {
+  AVATAR_DISPLAY_NAME,
   getConferenceVideoPublications,
   getConferenceVideoSourceLabel,
   getParticipantDisplayName,
   isAvatarParticipantIdentity,
+  isHumanConferenceIdentity,
   shouldShowParticipantInConferenceGrid,
 } from '@/lib/conferenceParticipant';
+import {
+  isAvatarConnectingFromMetadata,
+  isAvatarListeningPausedFromMetadata,
+  parseConferenceRoomMetadata,
+} from '@/lib/conferenceRoomMetadata';
 import { formatScreenShareError } from '@/lib/formatScreenShareError';
 import { resolveConferenceLiveKitUrl } from '@/lib/resolveConferenceLiveKitUrl';
 import {
@@ -119,15 +127,21 @@ type AudioAttachment = {
   track: AudioTrack;
 };
 
-const parseAvatarListeningPaused = (metadata: string | undefined): boolean => {
-  if (!metadata) return false;
-  try {
-    const parsed = JSON.parse(metadata) as {
-      avatar_listening_paused?: boolean;
-    };
-    return parsed.avatar_listening_paused === true;
-  } catch {
-    return false;
+const syncConferenceRoomMetadata = (
+  metadata: string | undefined,
+  setters: {
+    setAvatarListeningPaused: (value: boolean) => void;
+    setAvatarConnecting: (value: boolean) => void;
+    setExpectedAvatarIdentity: (value: string) => void;
+  },
+) => {
+  setters.setAvatarListeningPaused(
+    isAvatarListeningPausedFromMetadata(metadata),
+  );
+  setters.setAvatarConnecting(isAvatarConnectingFromMetadata(metadata));
+  const parsed = parseConferenceRoomMetadata(metadata);
+  if (parsed.expected_avatar_identity) {
+    setters.setExpectedAvatarIdentity(parsed.expected_avatar_identity);
   }
 };
 
@@ -169,6 +183,22 @@ const getVideoTilesForParticipant = (
   }
   return tiles;
 };
+
+function AvatarConnectingPlaceholder() {
+  return (
+    <div className="rounded-lg border border-slate-300 bg-black/90 p-2">
+      <p className="mb-1 text-xs text-slate-200">
+        {AVATAR_DISPLAY_NAME} Camera
+      </p>
+      <div className="flex aspect-[4/3] w-full items-center justify-center rounded bg-slate-800 px-4 text-center text-sm text-slate-300">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span>Waiting for participant to join</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function VideoTile({ tile }: { tile: Tile }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -251,6 +281,7 @@ export default function ConferenceRoomClient() {
   const [error, setError] = useState('');
   const [isConnecting, setIsConnecting] = useState(true);
   const [avatarListeningPaused, setAvatarListeningPaused] = useState(false);
+  const [avatarConnecting, setAvatarConnecting] = useState(false);
   const [tiles, setTiles] = useState<Tile[]>([]);
   const [audioAttachments, setAudioAttachments] = useState<AudioAttachment[]>(
     [],
@@ -259,7 +290,7 @@ export default function ConferenceRoomClient() {
     useState<ReturnType<typeof getConferenceSession>>(null);
   const [hasLoadedSession, setHasLoadedSession] = useState(false);
   const [isUpdatingAvatarControl, setIsUpdatingAvatarControl] = useState(false);
-  const [isAvatarDispatching, setIsAvatarDispatching] = useState(false);
+  const [isAvatarStarting, setIsAvatarStarting] = useState(false);
   const [isAvatarStopping, setIsAvatarStopping] = useState(false);
   const [isScreenSharePublishing, setIsScreenSharePublishing] = useState(false);
   const [isMicrophoneEnabled, setIsMicrophoneEnabled] = useState(true);
@@ -489,15 +520,21 @@ export default function ConferenceRoomClient() {
         livekitRoom.on(RoomEvent.LocalTrackPublished, handleRoomRefresh);
         livekitRoom.on(RoomEvent.LocalTrackUnpublished, handleRoomRefresh);
         livekitRoom.on(RoomEvent.RoomMetadataChanged, () => {
-          setAvatarListeningPaused(
-            parseAvatarListeningPaused(livekitRoom.metadata),
-          );
+          syncConferenceRoomMetadata(livekitRoom.metadata, {
+            setAvatarListeningPaused,
+            setAvatarConnecting,
+            setExpectedAvatarIdentity,
+          });
         });
 
-        setAvatarListeningPaused(
-          parseAvatarListeningPaused(livekitRoom.metadata),
-        );
-        setExpectedAvatarIdentity(payload.expected_avatar_identity || '');
+        syncConferenceRoomMetadata(livekitRoom.metadata, {
+          setAvatarListeningPaused,
+          setAvatarConnecting,
+          setExpectedAvatarIdentity,
+        });
+        if (!livekitRoom.metadata && payload.expected_avatar_identity) {
+          setExpectedAvatarIdentity(payload.expected_avatar_identity);
+        }
         refreshTiles(livekitRoom);
         setRoom(livekitRoom);
       } catch (value: unknown) {
@@ -528,6 +565,20 @@ export default function ConferenceRoomClient() {
 
   const handleLeave = async () => {
     if (room) {
+      const hasLocalScreenShare = Array.from(
+        room.localParticipant.videoTrackPublications.values(),
+      ).some(
+        (publication) =>
+          publication.source === Track.Source.ScreenShare &&
+          Boolean(publication.track),
+      );
+      if (hasLocalScreenShare) {
+        try {
+          await room.localParticipant.setScreenShareEnabled(false);
+        } catch {
+          // Continue leaving even if screen share cleanup fails.
+        }
+      }
       await room.disconnect();
     }
     clearConferenceSession();
@@ -573,11 +624,11 @@ export default function ConferenceRoomClient() {
 
   const targetParticipantIdentity = (() => {
     const localIdentity = room?.localParticipant.identity;
-    if (localIdentity?.startsWith('participant-')) {
+    if (localIdentity && isHumanConferenceIdentity(localIdentity)) {
       return localIdentity;
     }
     return remoteParticipantIdentities.find((identity) =>
-      identity.startsWith('participant-'),
+      isHumanConferenceIdentity(identity),
     );
   })();
   const hasAvatarParticipant = expectedAvatarIdentity
@@ -586,14 +637,26 @@ export default function ConferenceRoomClient() {
         identity.includes('avatar-agent'),
       );
 
+  useEffect(() => {
+    if (hasAvatarParticipant) {
+      setIsAvatarStarting(false);
+      setAvatarConnecting(false);
+    }
+  }, [hasAvatarParticipant]);
+
+  const isAvatarWaitingToJoin =
+    !hasAvatarParticipant && (isAvatarStarting || avatarConnecting);
+
   const dispatchAvatar = async () => {
-    if (!session || !backendBaseUrl || !room || isAvatarDispatching) return;
+    if (!session || !backendBaseUrl || !room || isAvatarStarting) return;
     if (!targetParticipantIdentity) {
-      setError('A participant must join before starting the avatar.');
+      setError(
+        'A moderator or participant must join before starting the avatar.',
+      );
       return;
     }
 
-    setIsAvatarDispatching(true);
+    setIsAvatarStarting(true);
     setError('');
     setAvatarStatus('');
     try {
@@ -633,8 +696,7 @@ export default function ConferenceRoomClient() {
       refreshTiles(room);
     } catch (value: unknown) {
       setError(value instanceof Error ? value.message : 'Unable to start avatar.');
-    } finally {
-      setIsAvatarDispatching(false);
+      setIsAvatarStarting(false);
     }
   };
 
@@ -759,9 +821,16 @@ export default function ConferenceRoomClient() {
               <Button
                 onClick={() => void dispatchAvatar()}
                 disabled={
-                  !room || isAvatarDispatching || !targetParticipantIdentity
+                  !room || isAvatarStarting || !targetParticipantIdentity
                 }>
-                {isAvatarDispatching ? 'Starting Avatar' : 'Start Avatar'}
+                {isAvatarStarting ? (
+                  <>
+                    <Loader2 className="animate-spin" />
+                    Starting Avatar
+                  </>
+                ) : (
+                  'Start Avatar'
+                )}
               </Button>
             ) : (
               <Button
@@ -884,6 +953,9 @@ export default function ConferenceRoomClient() {
               {cameraTiles.map((tile) => (
                 <VideoTile key={tile.id} tile={tile} />
               ))}
+              {isAvatarWaitingToJoin ? (
+                <AvatarConnectingPlaceholder key="avatar-connecting" />
+              ) : null}
             </div>
           </section>
         </CardContent>
