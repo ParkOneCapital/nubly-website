@@ -25,7 +25,7 @@ import {
 } from '@/lib/conferenceSession';
 import {
   AVATAR_DISPLAY_NAME,
-  getConferenceVideoPublications,
+  getConferenceVideoPublicationsForGrid,
   getConferenceVideoSourceLabel,
   getParticipantDisplayName,
   isAvatarParticipantIdentity,
@@ -119,6 +119,7 @@ type Tile = {
   isLocal: boolean;
   source: Track.Source;
   track: VideoTrack | null;
+  isPending: boolean;
   participant: LocalParticipant | RemoteParticipant;
 };
 
@@ -154,19 +155,16 @@ const getVideoTilesForParticipant = (
   }
 
   const tiles: Tile[] = [];
-  for (const publication of getConferenceVideoPublications(participant)) {
-    const track = publication.videoTrack;
-    if (!track) {
-      continue;
-    }
-
+  for (const publication of getConferenceVideoPublicationsForGrid(participant)) {
     const source = publication.source ?? Track.Source.Camera;
+    const track = publication.videoTrack ?? null;
     tiles.push({
       id: `${participant.sid}-${publication.trackSid || source}`,
       displayName: getParticipantDisplayName(participant),
       isLocal,
       source,
       track,
+      isPending: !track,
       participant,
     });
   }
@@ -178,6 +176,7 @@ const getVideoTilesForParticipant = (
       isLocal,
       source: Track.Source.Camera,
       track: null,
+      isPending: false,
       participant,
     });
   }
@@ -239,7 +238,11 @@ function VideoTile({ tile }: { tile: Tile }) {
           className={`flex items-center justify-center rounded bg-slate-800 text-sm text-slate-300 ${
             isScreenShare ? 'min-h-[240px]' : 'aspect-[4/3] w-full'
           }`}>
-          {isScreenShare ? 'Screen share unavailable' : 'Camera unavailable'}
+          {isScreenShare
+            ? 'Screen share unavailable'
+            : tile.isPending
+              ? 'Camera connecting...'
+              : 'Camera unavailable'}
         </div>
       )}
     </div>
@@ -519,6 +522,17 @@ export default function ConferenceRoomClient() {
         livekitRoom.on(RoomEvent.ParticipantDisconnected, handleRoomRefresh);
         livekitRoom.on(RoomEvent.LocalTrackPublished, handleRoomRefresh);
         livekitRoom.on(RoomEvent.LocalTrackUnpublished, handleRoomRefresh);
+        livekitRoom.on(
+          RoomEvent.TrackSubscriptionFailed,
+          (trackSid, participant, reason) => {
+            console.warn('Track subscription failed', {
+              trackSid,
+              participant: participant.identity,
+              reason,
+            });
+            handleRoomRefresh();
+          },
+        );
         livekitRoom.on(RoomEvent.RoomMetadataChanged, () => {
           syncConferenceRoomMetadata(livekitRoom.metadata, {
             setAvatarListeningPaused,
@@ -564,6 +578,7 @@ export default function ConferenceRoomClient() {
   }, [backendBaseUrl, hasLoadedSession, refreshTiles, router, session]);
 
   const handleLeave = async () => {
+    const activeSession = session;
     if (room) {
       const hasLocalScreenShare = Array.from(
         room.localParticipant.videoTrackPublications.values(),
@@ -580,6 +595,21 @@ export default function ConferenceRoomClient() {
         }
       }
       await room.disconnect();
+    }
+    if (activeSession && backendBaseUrl) {
+      try {
+        await fetch(`${backendBaseUrl}/api/v1/livekit/conference/session-ended`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            access_code: activeSession.accessCode,
+            room_code: activeSession.roomCode,
+            role: activeSession.role,
+          }),
+        });
+      } catch {
+        // LiveKit webhooks perform authoritative teardown if this notify fails.
+      }
     }
     clearConferenceSession();
     setSession(null);

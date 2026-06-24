@@ -108,6 +108,22 @@ export function getConferenceVideoPublications(
   return selectedPublication ? [selectedPublication] : [];
 }
 
+/** All video publications for grid layout, including tracks still subscribing. */
+export function getConferenceVideoPublicationsForGrid(
+  participant: LocalParticipant | RemoteParticipant,
+): VideoPublication[] {
+  const publications = [
+    ...participant.videoTrackPublications.values(),
+  ] as VideoPublication[];
+
+  if (!isAvatarParticipantIdentity(participant.identity)) {
+    return publications;
+  }
+
+  const selectedPublication = pickAvatarVideoPublication(publications);
+  return selectedPublication ? [selectedPublication] : [];
+}
+
 export function getConferenceVideoSourceLabel(
   participant: LocalParticipant | RemoteParticipant,
   source: Track.Source,
