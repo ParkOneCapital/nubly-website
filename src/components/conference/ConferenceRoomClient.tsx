@@ -578,6 +578,7 @@ export default function ConferenceRoomClient() {
   }, [backendBaseUrl, hasLoadedSession, refreshTiles, router, session]);
 
   const handleLeave = async () => {
+    const activeSession = session;
     if (room) {
       const hasLocalScreenShare = Array.from(
         room.localParticipant.videoTrackPublications.values(),
@@ -594,6 +595,21 @@ export default function ConferenceRoomClient() {
         }
       }
       await room.disconnect();
+    }
+    if (activeSession && backendBaseUrl) {
+      try {
+        await fetch(`${backendBaseUrl}/api/v1/livekit/conference/session-ended`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            access_code: activeSession.accessCode,
+            room_code: activeSession.roomCode,
+            role: activeSession.role,
+          }),
+        });
+      } catch {
+        // LiveKit webhooks perform authoritative teardown if this notify fails.
+      }
     }
     clearConferenceSession();
     setSession(null);
