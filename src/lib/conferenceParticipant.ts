@@ -8,6 +8,17 @@ import { Track } from 'livekit-client';
 
 export const AVATAR_DISPLAY_NAME = 'Mary';
 
+export function isHumanConferenceIdentity(
+  identity: string | undefined,
+): boolean {
+  return (
+    typeof identity === 'string' &&
+    (identity.startsWith('participant-') ||
+      identity.startsWith('moderator-') ||
+      identity.startsWith('interviewer-'))
+  );
+}
+
 export function isAvatarParticipantIdentity(
   identity: string | undefined,
 ): boolean {
