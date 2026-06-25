@@ -48,6 +48,7 @@ import {
   isMediaDevicesAvailable,
   isScreenShareSupported,
 } from '@/lib/mediaDevicesSupport';
+import { subscribeConferenceAgentThinking } from '@/lib/conferenceAgentState';
 import ConferenceFeedbackDialog from '@/components/conference/ConferenceFeedbackDialog';
 
 type ConferenceTokenResponse = {
@@ -199,7 +200,13 @@ function AvatarConnectingPlaceholder() {
   );
 }
 
-function VideoTile({ tile }: { tile: Tile }) {
+function VideoTile({
+  tile,
+  showThinkingOverlay = false,
+}: {
+  tile: Tile;
+  showThinkingOverlay?: boolean;
+}) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const isScreenShare = tile.source === Track.Source.ScreenShare;
   const sourceLabel = getConferenceVideoSourceLabel(
@@ -217,7 +224,7 @@ function VideoTile({ tile }: { tile: Tile }) {
   }, [tile.track]);
 
   return (
-    <div className="rounded-lg border border-slate-300 bg-black/90 p-2">
+    <div className="relative rounded-lg border border-slate-300 bg-black/90 p-2">
       <p className="mb-1 text-xs text-slate-200">
         {tile.displayName} {tile.isLocal ? '(You)' : ''} {sourceLabel}
       </p>
@@ -245,6 +252,12 @@ function VideoTile({ tile }: { tile: Tile }) {
               : 'Camera unavailable'}
         </div>
       )}
+      {showThinkingOverlay ? (
+        <div className="absolute inset-2 z-10 flex items-center justify-center gap-2 rounded bg-black/50 px-3 text-sm text-white">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span>Thinking...</span>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -307,6 +320,7 @@ export default function ConferenceRoomClient() {
     string[]
   >([]);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isAvatarThinking, setIsAvatarThinking] = useState(false);
 
   const backendBaseUrl = useMemo(
     () =>
@@ -385,6 +399,15 @@ export default function ConferenceRoomClient() {
     },
     [backendBaseUrl, isUpdatingAvatarControl, session],
   );
+
+  useEffect(() => {
+    if (!room) {
+      setIsAvatarThinking(false);
+      return;
+    }
+
+    return subscribeConferenceAgentThinking(room, setIsAvatarThinking);
+  }, [room]);
 
   useEffect(() => {
     setSession(getConferenceSession());
@@ -520,6 +543,7 @@ export default function ConferenceRoomClient() {
         livekitRoom.on(RoomEvent.TrackUnpublished, handleRoomRefresh);
         livekitRoom.on(RoomEvent.ParticipantConnected, handleRoomRefresh);
         livekitRoom.on(RoomEvent.ParticipantDisconnected, handleRoomRefresh);
+        livekitRoom.on(RoomEvent.ParticipantAttributesChanged, handleRoomRefresh);
         livekitRoom.on(RoomEvent.LocalTrackPublished, handleRoomRefresh);
         livekitRoom.on(RoomEvent.LocalTrackUnpublished, handleRoomRefresh);
         livekitRoom.on(
@@ -981,7 +1005,14 @@ export default function ConferenceRoomClient() {
             <h2 className="text-sm font-semibold">Participants</h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {cameraTiles.map((tile) => (
-                <VideoTile key={tile.id} tile={tile} />
+                <VideoTile
+                  key={tile.id}
+                  tile={tile}
+                  showThinkingOverlay={
+                    isAvatarParticipantIdentity(tile.participant.identity) &&
+                    isAvatarThinking
+                  }
+                />
               ))}
               {isAvatarWaitingToJoin ? (
                 <AvatarConnectingPlaceholder key="avatar-connecting" />
