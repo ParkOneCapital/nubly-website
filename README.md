@@ -40,13 +40,41 @@ The `functions/` folder has its own `npm run serve`, but that starts only the Fu
 - Functions: `http://localhost:5001/livenublylanding/us-central1` (set in `.env.development.local`)
 - Firestore is seeded automatically on startup with access code `test123` (Bob Smith, `bob.smith@test.com`) — see [`scripts/emulator-seed-data.mjs`](scripts/emulator-seed-data.mjs). To re-seed while emulators are running: `npm run seed:emulator`
 
-Use `firebase-tools` (not `firebase`). The CLI is installed as a dev dependency.
+Use **`npx firebase`**, not a global `firebase` command. The CLI (`firebase-tools`) is installed as a dev dependency in this repo — if you run `firebase deploy` and see `command not found`, use `npx` from the project root instead.
 
 If Socket blocks installing `firebase-tools` because of a transitive `uuid` CVE, accept the risk once:
 
 ```bash
 SOCKET_CLI_ACCEPT_RISKS=1 npm install
 ```
+
+## Deploy Cloud Functions
+
+Run all Firebase CLI commands from the **project root** (`nubly-landing-v2/`). `firebase.json` and `.firebaserc` live there — not in `functions/`.
+
+Build TypeScript, then deploy:
+
+```bash
+cd /path/to/nubly-landing-v2
+
+npm run build:functions
+npx firebase deploy --only functions
+```
+
+First time (or after switching Google accounts):
+
+```bash
+npx firebase login
+```
+
+Other useful commands:
+
+```bash
+npx firebase deploy --only functions:getFeedbackSurvey   # single function
+npx firebase functions:log
+```
+
+Do **not** rely on a globally installed `firebase` binary unless you maintain it yourself. This project expects `npx firebase` so everyone uses the same `firebase-tools` version from `package.json`.
 
 ## Updating the feedback survey
 
@@ -139,9 +167,10 @@ Use a new version when you add/remove/reorder questions or change what a questio
    npm test
    npm run build:functions
    npm run build
+   npx firebase deploy --only functions
    ```
 
-   Then deploy Cloud Functions and the web app. Restart local emulators if testing locally (`npm run emulators`).
+   Deploy the Next.js site separately (e.g. Vercel). Restart local emulators if testing locally (`npm run emulators`).
 
 5. **Verify** at [http://localhost:3000/feedback](http://localhost:3000/feedback).
 

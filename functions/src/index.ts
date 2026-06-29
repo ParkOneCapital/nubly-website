@@ -37,6 +37,11 @@ import * as logger from 'firebase-functions/logger';
 import { DocumentData, FieldValue } from 'firebase-admin/firestore';
 import cors from 'cors';
 import { validateSaveFeedbackPayload } from './feedbackValidation';
+import {
+  ACTIVE_SURVEY,
+  CURRENT_SURVEY_VERSION,
+  EMAIL_FIELD,
+} from './shared/feedback/surveyDefinitions';
 
 const corsHandler = cors({ origin: true });
 
@@ -235,6 +240,25 @@ export const saveSignUp = onRequest(async (req, res) => {
         response: error instanceof Error ? error.message : error,
       });
     }
+  });
+});
+
+export const getFeedbackSurvey = onRequest({ invoker: 'public' }, async (req, res) => {
+  corsHandler(req, res, async () => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method !== 'GET' && req.method !== 'POST') {
+      res.status(405).send('Method Not Allowed');
+      return;
+    }
+
+    res.status(200).json({
+      surveyVersion: CURRENT_SURVEY_VERSION,
+      emailField: EMAIL_FIELD,
+      survey: ACTIVE_SURVEY,
+    });
   });
 });
 
