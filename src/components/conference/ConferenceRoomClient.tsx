@@ -48,7 +48,11 @@ import {
   isMediaDevicesAvailable,
   isScreenShareSupported,
 } from '@/lib/mediaDevicesSupport';
-import { subscribeConferenceAgentThinking } from '@/lib/conferenceAgentState';
+import {
+  formatConferenceAgentStateLabel,
+  subscribeConferenceAgentState,
+  type ConferenceAgentState,
+} from '@/lib/conferenceAgentState';
 import ConferenceFeedbackDialog from '@/components/conference/ConferenceFeedbackDialog';
 
 type ConferenceTokenResponse = {
@@ -200,13 +204,7 @@ function AvatarConnectingPlaceholder() {
   );
 }
 
-function VideoTile({
-  tile,
-  showThinkingOverlay = false,
-}: {
-  tile: Tile;
-  showThinkingOverlay?: boolean;
-}) {
+function VideoTile({ tile }: { tile: Tile }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const isScreenShare = tile.source === Track.Source.ScreenShare;
   const sourceLabel = getConferenceVideoSourceLabel(
@@ -252,12 +250,6 @@ function VideoTile({
               : 'Camera unavailable'}
         </div>
       )}
-      {showThinkingOverlay ? (
-        <div className="absolute inset-2 z-10 flex items-center justify-center gap-2 rounded bg-black/50 px-3 text-sm text-white">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <span>Thinking...</span>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -320,7 +312,9 @@ export default function ConferenceRoomClient() {
     string[]
   >([]);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-  const [isAvatarThinking, setIsAvatarThinking] = useState(false);
+  const [avatarAgentState, setAvatarAgentState] = useState<
+    ConferenceAgentState | undefined
+  >(undefined);
 
   const backendBaseUrl = useMemo(
     () =>
@@ -400,13 +394,18 @@ export default function ConferenceRoomClient() {
     [backendBaseUrl, isUpdatingAvatarControl, session],
   );
 
+  const avatarAgentStateLabel = useMemo(
+    () => formatConferenceAgentStateLabel(avatarAgentState),
+    [avatarAgentState],
+  );
+
   useEffect(() => {
     if (!room) {
-      setIsAvatarThinking(false);
+      setAvatarAgentState(undefined);
       return;
     }
 
-    return subscribeConferenceAgentThinking(room, setIsAvatarThinking);
+    return subscribeConferenceAgentState(room, setAvatarAgentState);
   }, [room]);
 
   useEffect(() => {
@@ -968,6 +967,13 @@ export default function ConferenceRoomClient() {
             <span className="font-semibold">
               {hasAvatarParticipant ? 'Joined' : 'Not started'}
             </span>
+            {hasAvatarParticipant && avatarAgentStateLabel ? (
+              <>
+                {' '}
+                | Status:{' '}
+                <span className="font-semibold">{avatarAgentStateLabel}</span>
+              </>
+            ) : null}
             {hasAvatarParticipant ? ' | Listening: ' : null}
             <span className="font-semibold">
               {hasAvatarParticipant
@@ -993,7 +999,17 @@ export default function ConferenceRoomClient() {
           <RoomAudioAttachments attachments={audioAttachments} />
           {screenShareTiles.length > 0 ? (
             <section className="space-y-2">
-              <h2 className="text-sm font-semibold">Shared app screen</h2>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-sm font-semibold">Shared app screen</h2>
+                {hasAvatarParticipant && avatarAgentStateLabel ? (
+                  <p className="text-sm text-muted-foreground">
+                    Avatar:{' '}
+                    <span className="font-semibold text-foreground">
+                      {avatarAgentStateLabel}
+                    </span>
+                  </p>
+                ) : null}
+              </div>
               <div className="grid grid-cols-1 gap-3">
                 {screenShareTiles.map((tile) => (
                   <VideoTile key={tile.id} tile={tile} />
@@ -1005,14 +1021,7 @@ export default function ConferenceRoomClient() {
             <h2 className="text-sm font-semibold">Participants</h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {cameraTiles.map((tile) => (
-                <VideoTile
-                  key={tile.id}
-                  tile={tile}
-                  showThinkingOverlay={
-                    isAvatarParticipantIdentity(tile.participant.identity) &&
-                    isAvatarThinking
-                  }
-                />
+                <VideoTile key={tile.id} tile={tile} />
               ))}
               {isAvatarWaitingToJoin ? (
                 <AvatarConnectingPlaceholder key="avatar-connecting" />

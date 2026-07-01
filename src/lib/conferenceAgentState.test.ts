@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   LIVEKIT_AGENT_STATE_ATTRIBUTE,
   LIVEKIT_PUBLISH_ON_BEHALF_ATTRIBUTE,
+  formatConferenceAgentStateLabel,
   isConferenceMediaAgentParticipant,
   readConferenceAgentState,
   shouldShowAvatarThinkingIndicator,
@@ -79,5 +80,14 @@ describe('conferenceAgentState', () => {
         room!.remoteParticipants.get('sid-0') as never,
       ),
     ).toBe(false);
+  });
+
+  it('maps LiveKit agent states to conference UI labels', () => {
+    expect(formatConferenceAgentStateLabel('thinking')).toBe('Thinking');
+    expect(formatConferenceAgentStateLabel('listening')).toBe('Ready');
+    expect(formatConferenceAgentStateLabel('idle')).toBe('Ready');
+    expect(formatConferenceAgentStateLabel('speaking')).toBe('Speaking');
+    expect(formatConferenceAgentStateLabel('initializing')).toBe('Connecting');
+    expect(formatConferenceAgentStateLabel(undefined)).toBeUndefined();
   });
 });

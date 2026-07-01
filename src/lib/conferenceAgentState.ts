@@ -66,20 +66,48 @@ export function shouldShowAvatarThinkingIndicator(
   return agentState === 'thinking';
 }
 
+export function formatConferenceAgentStateLabel(
+  agentState: ConferenceAgentState | undefined,
+): string | undefined {
+  if (!agentState) {
+    return undefined;
+  }
+
+  switch (agentState) {
+    case 'thinking':
+      return 'Thinking';
+    case 'idle':
+    case 'listening':
+      return 'Ready';
+    case 'speaking':
+      return 'Speaking';
+    case 'connecting':
+    case 'pre-connect-buffering':
+    case 'initializing':
+      return 'Connecting';
+    case 'disconnected':
+      return 'Disconnected';
+    case 'failed':
+      return 'Failed';
+    default:
+      return agentState.charAt(0).toUpperCase() + agentState.slice(1);
+  }
+}
+
 export function readConferenceAgentThinking(
   room: Room | null | undefined,
 ): boolean {
   return shouldShowAvatarThinkingIndicator(readConferenceAgentState(room));
 }
 
-export function subscribeConferenceAgentThinking(
+export function subscribeConferenceAgentState(
   room: Room,
-  onThinkingChange: (isThinking: boolean) => void,
+  onStateChange: (state: ConferenceAgentState | undefined) => void,
 ): () => void {
   const participantCleanups = new Map<string, () => void>();
 
   const sync = () => {
-    onThinkingChange(readConferenceAgentThinking(room));
+    onStateChange(readConferenceAgentState(room));
   };
 
   const attachParticipantListener = (participant: RemoteParticipant) => {
@@ -133,4 +161,13 @@ export function subscribeConferenceAgentThinking(
     }
     participantCleanups.clear();
   };
+}
+
+export function subscribeConferenceAgentThinking(
+  room: Room,
+  onThinkingChange: (isThinking: boolean) => void,
+): () => void {
+  return subscribeConferenceAgentState(room, (state) => {
+    onThinkingChange(shouldShowAvatarThinkingIndicator(state));
+  });
 }

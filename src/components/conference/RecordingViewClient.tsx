@@ -14,13 +14,16 @@ import {
   Track,
   type VideoTrack,
 } from 'livekit-client';
-import { subscribeConferenceAgentThinking } from '@/lib/conferenceAgentState';
+import {
+  formatConferenceAgentStateLabel,
+  subscribeConferenceAgentState,
+  type ConferenceAgentState,
+} from '@/lib/conferenceAgentState';
 import {
   AVATAR_DISPLAY_NAME,
   getConferenceVideoPublicationsForGrid,
   getConferenceVideoSourceLabel,
   getParticipantDisplayName,
-  isAvatarParticipantIdentity,
   shouldShowParticipantInConferenceGrid,
 } from '@/lib/conferenceParticipant';
 import {
@@ -91,11 +94,9 @@ function AvatarConnectingPlaceholder({ compact }: { compact?: boolean }) {
 function RecordingVideoTile({
   tile,
   primary,
-  showThinkingOverlay = false,
 }: {
   tile: RecordingTile;
   primary?: boolean;
-  showThinkingOverlay?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const sourceLabel = getConferenceVideoSourceLabel(tile.participant, tile.source);
@@ -131,12 +132,6 @@ function RecordingVideoTile({
             Waiting for track
           </div>
         )}
-        {showThinkingOverlay ? (
-          <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-lg bg-black/50 px-3 text-sm text-white">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span>Thinking...</span>
-          </div>
-        ) : null}
       </div>
     </div>
   );
@@ -254,7 +249,14 @@ export default function RecordingViewClient() {
   const [error, setError] = useState('');
   const [avatarConnecting, setAvatarConnecting] = useState(false);
   const [expectedAvatarIdentity, setExpectedAvatarIdentity] = useState('');
-  const [isAvatarThinking, setIsAvatarThinking] = useState(false);
+  const [avatarAgentState, setAvatarAgentState] = useState<
+    ConferenceAgentState | undefined
+  >(undefined);
+
+  const avatarAgentStateLabel = useMemo(
+    () => formatConferenceAgentStateLabel(avatarAgentState),
+    [avatarAgentState],
+  );
 
   const connection = useMemo(
     () => ({
@@ -289,11 +291,11 @@ export default function RecordingViewClient() {
 
   useEffect(() => {
     if (!room) {
-      setIsAvatarThinking(false);
+      setAvatarAgentState(undefined);
       return;
     }
 
-    return subscribeConferenceAgentThinking(room, setIsAvatarThinking);
+    return subscribeConferenceAgentState(room, setAvatarAgentState);
   }, [room]);
 
   useEffect(() => {
@@ -397,9 +399,6 @@ export default function RecordingViewClient() {
     ? tiles.filter((tile) => tile.id !== primaryTile.id)
     : tiles;
 
-  const showThinkingOnTile = (tile: RecordingTile) =>
-    isAvatarParticipantIdentity(tile.participant.identity) && isAvatarThinking;
-
   return (
     <main className="flex h-screen w-screen gap-4 bg-slate-950 p-4 text-white">
       <RecordingAudio attachments={audioAttachments} />
@@ -408,20 +407,19 @@ export default function RecordingViewClient() {
       ) : null}
       {!error && primaryTile ? (
         <>
-          <section className="min-w-0 flex-[4]">
-            <RecordingVideoTile
-              tile={primaryTile}
-              primary
-              showThinkingOverlay={showThinkingOnTile(primaryTile)}
-            />
+          <section className="relative min-w-0 flex-[4]">
+            {primaryTile.source === Track.Source.ScreenShare &&
+            hasAvatarParticipant &&
+            avatarAgentStateLabel ? (
+              <div className="absolute right-4 top-4 z-10 rounded-full bg-black/70 px-3 py-1 text-sm font-semibold">
+                Avatar: {avatarAgentStateLabel}
+              </div>
+            ) : null}
+            <RecordingVideoTile tile={primaryTile} primary />
           </section>
           <aside className="grid w-80 grid-cols-1 gap-3 overflow-hidden">
             {sideTiles.map((tile) => (
-              <RecordingVideoTile
-                key={tile.id}
-                tile={tile}
-                showThinkingOverlay={showThinkingOnTile(tile)}
-              />
+              <RecordingVideoTile key={tile.id} tile={tile} />
             ))}
             {isAvatarWaitingToJoin ? (
               <AvatarConnectingPlaceholder key="avatar-connecting" compact />
