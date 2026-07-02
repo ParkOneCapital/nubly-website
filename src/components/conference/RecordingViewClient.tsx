@@ -16,18 +16,21 @@ import {
 } from 'livekit-client';
 import {
   formatConferenceAgentStateLabel,
+  formatConferenceAvatarTileHeaderLabel,
   subscribeConferenceAgentState,
   type ConferenceAgentState,
+  type ConferenceAvatarTileStatusInput,
 } from '@/lib/conferenceAgentState';
 import {
   AVATAR_DISPLAY_NAME,
+  formatConferenceParticipantTileHeaderLabel,
   getConferenceVideoPublicationsForGrid,
-  getConferenceVideoSourceLabel,
   getParticipantDisplayName,
   shouldShowParticipantInConferenceGrid,
 } from '@/lib/conferenceParticipant';
 import {
   isAvatarConnectingFromMetadata,
+  isAvatarListeningPausedFromMetadata,
   parseConferenceRoomMetadata,
 } from '@/lib/conferenceRoomMetadata';
 
@@ -76,8 +79,9 @@ function AvatarConnectingPlaceholder({ compact }: { compact?: boolean }) {
       }`}
     >
       <div className="mb-2 text-sm font-semibold">
-        {AVATAR_DISPLAY_NAME}{' '}
-        <span className="text-xs text-slate-300">Camera</span>
+        {formatConferenceAvatarTileHeaderLabel(AVATAR_DISPLAY_NAME, {
+          isAvatarWaitingToJoin: true,
+        })}
       </div>
       <div
         className={`flex flex-1 flex-col items-center justify-center gap-3 rounded-lg bg-slate-800 px-4 text-center text-sm text-slate-300 ${
@@ -94,12 +98,13 @@ function AvatarConnectingPlaceholder({ compact }: { compact?: boolean }) {
 function RecordingVideoTile({
   tile,
   primary,
+  avatarTileStatus,
 }: {
   tile: RecordingTile;
   primary?: boolean;
+  avatarTileStatus?: ConferenceAvatarTileStatusInput;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const sourceLabel = getConferenceVideoSourceLabel(tile.participant, tile.source);
 
   useEffect(() => {
     if (!videoRef.current || !tile.track) return;
@@ -113,8 +118,13 @@ function RecordingVideoTile({
   return (
     <div className="flex h-full min-h-0 flex-col rounded-xl bg-black p-2 text-white">
       <div className="mb-2 text-sm font-semibold">
-        {tile.displayName}{' '}
-        <span className="text-xs text-slate-300">{sourceLabel}</span>
+        {formatConferenceParticipantTileHeaderLabel({
+          displayName: tile.displayName,
+          isLocal: false,
+          participant: tile.participant,
+          source: tile.source,
+          avatarTileStatus,
+        })}
       </div>
       <div className="relative min-h-0 flex-1">
         {tile.track ? (
@@ -231,10 +241,14 @@ function syncConferenceRoomMetadata(
   metadata: string | undefined,
   setters: {
     setAvatarConnecting: (value: boolean) => void;
+    setAvatarListeningPaused: (value: boolean) => void;
     setExpectedAvatarIdentity: (value: string) => void;
   },
 ) {
   setters.setAvatarConnecting(isAvatarConnectingFromMetadata(metadata));
+  setters.setAvatarListeningPaused(
+    isAvatarListeningPausedFromMetadata(metadata),
+  );
   const parsed = parseConferenceRoomMetadata(metadata);
   if (parsed.expected_avatar_identity) {
     setters.setExpectedAvatarIdentity(parsed.expected_avatar_identity);
@@ -248,6 +262,7 @@ export default function RecordingViewClient() {
   const [audioAttachments, setAudioAttachments] = useState<AudioAttachment[]>([]);
   const [error, setError] = useState('');
   const [avatarConnecting, setAvatarConnecting] = useState(false);
+  const [avatarListeningPaused, setAvatarListeningPaused] = useState(false);
   const [expectedAvatarIdentity, setExpectedAvatarIdentity] = useState('');
   const [avatarAgentState, setAvatarAgentState] = useState<
     ConferenceAgentState | undefined
@@ -315,6 +330,7 @@ export default function RecordingViewClient() {
     const syncMetadata = () => {
       syncConferenceRoomMetadata(recordingRoom.metadata, {
         setAvatarConnecting,
+        setAvatarListeningPaused,
         setExpectedAvatarIdentity,
       });
     };
@@ -392,6 +408,15 @@ export default function RecordingViewClient() {
 
   const isAvatarWaitingToJoin = !hasAvatarParticipant && avatarConnecting;
 
+  const avatarTileStatus = useMemo<ConferenceAvatarTileStatusInput>(
+    () => ({
+      isAvatarWaitingToJoin,
+      avatarListeningPaused,
+      agentStateLabel: avatarAgentStateLabel,
+    }),
+    [avatarAgentStateLabel, avatarListeningPaused, isAvatarWaitingToJoin],
+  );
+
   const screenTiles = tiles.filter((tile) => tile.source === Track.Source.ScreenShare);
   const cameraTiles = tiles.filter((tile) => tile.source !== Track.Source.ScreenShare);
   const primaryTile = screenTiles[0] || cameraTiles[0];
@@ -408,18 +433,19 @@ export default function RecordingViewClient() {
       {!error && primaryTile ? (
         <>
           <section className="relative min-w-0 flex-[4]">
-            {primaryTile.source === Track.Source.ScreenShare &&
-            hasAvatarParticipant &&
-            avatarAgentStateLabel ? (
-              <div className="absolute right-4 top-4 z-10 rounded-full bg-black/70 px-3 py-1 text-sm font-semibold">
-                Avatar: {avatarAgentStateLabel}
-              </div>
-            ) : null}
-            <RecordingVideoTile tile={primaryTile} primary />
+            <RecordingVideoTile
+              tile={primaryTile}
+              primary
+              avatarTileStatus={avatarTileStatus}
+            />
           </section>
           <aside className="grid w-80 grid-cols-1 gap-3 overflow-hidden">
             {sideTiles.map((tile) => (
-              <RecordingVideoTile key={tile.id} tile={tile} />
+              <RecordingVideoTile
+                key={tile.id}
+                tile={tile}
+                avatarTileStatus={avatarTileStatus}
+              />
             ))}
             {isAvatarWaitingToJoin ? (
               <AvatarConnectingPlaceholder key="avatar-connecting" compact />
