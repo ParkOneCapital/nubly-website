@@ -5,6 +5,8 @@ import type {
   RemoteTrackPublication,
 } from 'livekit-client';
 import { Track } from 'livekit-client';
+import type { ConferenceAvatarTileStatusInput } from './conferenceAgentState';
+import { formatConferenceAvatarTileStatus } from './conferenceAgentState';
 
 export const AVATAR_DISPLAY_NAME = 'Mary';
 
@@ -137,4 +139,28 @@ export function getConferenceVideoSourceLabel(
   }
 
   return 'Camera';
+}
+
+export function formatConferenceParticipantTileHeaderLabel(params: {
+  displayName: string;
+  isLocal: boolean;
+  participant: LocalParticipant | RemoteParticipant;
+  source: Track.Source;
+  avatarTileStatus?: ConferenceAvatarTileStatusInput;
+}): string {
+  const youSuffix = params.isLocal ? ' (You)' : '';
+
+  if (
+    isAvatarParticipantIdentity(params.participant.identity) &&
+    params.avatarTileStatus
+  ) {
+    const status = formatConferenceAvatarTileStatus(params.avatarTileStatus);
+    return `${params.displayName}${youSuffix} - ${status}`;
+  }
+
+  const sourceLabel = getConferenceVideoSourceLabel(
+    params.participant,
+    params.source,
+  );
+  return `${params.displayName}${youSuffix} - ${sourceLabel}`;
 }

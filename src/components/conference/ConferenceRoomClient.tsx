@@ -25,8 +25,8 @@ import {
 } from '@/lib/conferenceSession';
 import {
   AVATAR_DISPLAY_NAME,
+  formatConferenceParticipantTileHeaderLabel,
   getConferenceVideoPublicationsForGrid,
-  getConferenceVideoSourceLabel,
   getParticipantDisplayName,
   isAvatarParticipantIdentity,
   isHumanConferenceIdentity,
@@ -50,8 +50,10 @@ import {
 } from '@/lib/mediaDevicesSupport';
 import {
   formatConferenceAgentStateLabel,
+  formatConferenceAvatarTileHeaderLabel,
   subscribeConferenceAgentState,
   type ConferenceAgentState,
+  type ConferenceAvatarTileStatusInput,
 } from '@/lib/conferenceAgentState';
 import ConferenceFeedbackDialog from '@/components/conference/ConferenceFeedbackDialog';
 
@@ -192,7 +194,9 @@ function AvatarConnectingPlaceholder() {
   return (
     <div className="rounded-lg border border-slate-300 bg-black/90 p-2">
       <p className="mb-1 text-xs text-slate-200">
-        {AVATAR_DISPLAY_NAME} Camera
+        {formatConferenceAvatarTileHeaderLabel(AVATAR_DISPLAY_NAME, {
+          isAvatarWaitingToJoin: true,
+        })}
       </p>
       <div className="flex aspect-[4/3] w-full items-center justify-center rounded bg-slate-800 px-4 text-center text-sm text-slate-300">
         <div className="flex flex-col items-center gap-2">
@@ -204,13 +208,15 @@ function AvatarConnectingPlaceholder() {
   );
 }
 
-function VideoTile({ tile }: { tile: Tile }) {
+function VideoTile({
+  tile,
+  avatarTileStatus,
+}: {
+  tile: Tile;
+  avatarTileStatus?: ConferenceAvatarTileStatusInput;
+}) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const isScreenShare = tile.source === Track.Source.ScreenShare;
-  const sourceLabel = getConferenceVideoSourceLabel(
-    tile.participant,
-    tile.source,
-  );
 
   useEffect(() => {
     if (!videoRef.current || !tile.track) return;
@@ -224,7 +230,13 @@ function VideoTile({ tile }: { tile: Tile }) {
   return (
     <div className="relative rounded-lg border border-slate-300 bg-black/90 p-2">
       <p className="mb-1 text-xs text-slate-200">
-        {tile.displayName} {tile.isLocal ? '(You)' : ''} {sourceLabel}
+        {formatConferenceParticipantTileHeaderLabel({
+          displayName: tile.displayName,
+          isLocal: tile.isLocal,
+          participant: tile.participant,
+          source: tile.source,
+          avatarTileStatus,
+        })}
       </p>
       {tile.track ? (
         <video
@@ -306,7 +318,6 @@ export default function ConferenceRoomClient() {
   const [isRecordingUpdating, setIsRecordingUpdating] = useState(false);
   const [egressId, setEgressId] = useState('');
   const [recordingStatus, setRecordingStatus] = useState('');
-  const [avatarStatus, setAvatarStatus] = useState('');
   const [expectedAvatarIdentity, setExpectedAvatarIdentity] = useState('');
   const [remoteParticipantIdentities, setRemoteParticipantIdentities] = useState<
     string[]
@@ -700,6 +711,21 @@ export default function ConferenceRoomClient() {
   const isAvatarWaitingToJoin =
     !hasAvatarParticipant && (isAvatarStarting || avatarConnecting);
 
+  const avatarTileStatus = useMemo<ConferenceAvatarTileStatusInput>(
+    () => ({
+      isAvatarWaitingToJoin,
+      isAvatarStopping,
+      avatarListeningPaused,
+      agentStateLabel: avatarAgentStateLabel,
+    }),
+    [
+      avatarAgentStateLabel,
+      avatarListeningPaused,
+      isAvatarStopping,
+      isAvatarWaitingToJoin,
+    ],
+  );
+
   const dispatchAvatar = async () => {
     if (!session || !backendBaseUrl || !room || isAvatarStarting) return;
     if (!targetParticipantIdentity) {
@@ -711,7 +737,6 @@ export default function ConferenceRoomClient() {
 
     setIsAvatarStarting(true);
     setError('');
-    setAvatarStatus('');
     try {
       const response = await fetch(
         `${backendBaseUrl}/api/v1/livekit/conference/avatar-dispatch`,
@@ -743,9 +768,6 @@ export default function ConferenceRoomClient() {
       if (payload.expected_avatar_identity) {
         setExpectedAvatarIdentity(payload.expected_avatar_identity);
       }
-      setAvatarStatus(
-        payload.already_dispatched ? 'Avatar already started.' : 'Avatar starting.',
-      );
       refreshTiles(room);
     } catch (value: unknown) {
       setError(value instanceof Error ? value.message : 'Unable to start avatar.');
@@ -758,7 +780,6 @@ export default function ConferenceRoomClient() {
 
     setIsAvatarStopping(true);
     setError('');
-    setAvatarStatus('');
     try {
       const response = await fetch(
         `${backendBaseUrl}/api/v1/livekit/conference/avatar-stop`,
@@ -780,7 +801,6 @@ export default function ConferenceRoomClient() {
           payload.message || payload.error || 'Unable to stop avatar.',
         );
       }
-      setAvatarStatus('Avatar stopped.');
       refreshTiles(room);
     } catch (value: unknown) {
       setError(value instanceof Error ? value.message : 'Unable to stop avatar.');
@@ -962,33 +982,6 @@ export default function ConferenceRoomClient() {
               {isMicrophoneEnabled ? 'On' : 'Muted'}
             </span>
           </p>
-          <p className="text-sm">
-            Avatar:{' '}
-            <span className="font-semibold">
-              {hasAvatarParticipant ? 'Joined' : 'Not started'}
-            </span>
-            {hasAvatarParticipant && avatarAgentStateLabel ? (
-              <>
-                {' '}
-                | Status:{' '}
-                <span className="font-semibold">{avatarAgentStateLabel}</span>
-              </>
-            ) : null}
-            {hasAvatarParticipant ? ' | Listening: ' : null}
-            <span className="font-semibold">
-              {hasAvatarParticipant
-                ? avatarListeningPaused
-                  ? 'Paused'
-                  : 'Active'
-                : ''}
-            </span>
-          </p>
-          {avatarStatus ? (
-            <p className="text-sm">
-              Avatar status:{' '}
-              <span className="font-semibold">{avatarStatus}</span>
-            </p>
-          ) : null}
           {recordingStatus ? (
             <p className="text-sm">
               Recording status:{' '}
@@ -999,20 +992,14 @@ export default function ConferenceRoomClient() {
           <RoomAudioAttachments attachments={audioAttachments} />
           {screenShareTiles.length > 0 ? (
             <section className="space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-sm font-semibold">Shared app screen</h2>
-                {hasAvatarParticipant && avatarAgentStateLabel ? (
-                  <p className="text-sm text-muted-foreground">
-                    Avatar:{' '}
-                    <span className="font-semibold text-foreground">
-                      {avatarAgentStateLabel}
-                    </span>
-                  </p>
-                ) : null}
-              </div>
+              <h2 className="text-sm font-semibold">Shared app screen</h2>
               <div className="grid grid-cols-1 gap-3">
                 {screenShareTiles.map((tile) => (
-                  <VideoTile key={tile.id} tile={tile} />
+                  <VideoTile
+                    key={tile.id}
+                    tile={tile}
+                    avatarTileStatus={avatarTileStatus}
+                  />
                 ))}
               </div>
             </section>
@@ -1021,7 +1008,11 @@ export default function ConferenceRoomClient() {
             <h2 className="text-sm font-semibold">Participants</h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {cameraTiles.map((tile) => (
-                <VideoTile key={tile.id} tile={tile} />
+                <VideoTile
+                  key={tile.id}
+                  tile={tile}
+                  avatarTileStatus={avatarTileStatus}
+                />
               ))}
               {isAvatarWaitingToJoin ? (
                 <AvatarConnectingPlaceholder key="avatar-connecting" />

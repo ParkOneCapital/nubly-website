@@ -4,6 +4,7 @@ import {
   LIVEKIT_AGENT_STATE_ATTRIBUTE,
   LIVEKIT_PUBLISH_ON_BEHALF_ATTRIBUTE,
   formatConferenceAgentStateLabel,
+  formatConferenceAvatarTileStatus,
   isConferenceMediaAgentParticipant,
   readConferenceAgentState,
   shouldShowAvatarThinkingIndicator,
@@ -89,5 +90,36 @@ describe('conferenceAgentState', () => {
     expect(formatConferenceAgentStateLabel('speaking')).toBe('Speaking');
     expect(formatConferenceAgentStateLabel('initializing')).toBe('Connecting');
     expect(formatConferenceAgentStateLabel(undefined)).toBeUndefined();
+  });
+
+  it('formats avatar tile status labels for participant headers', () => {
+    expect(
+      formatConferenceAvatarTileStatus({
+        isAvatarWaitingToJoin: true,
+      }),
+    ).toBe('Connecting...');
+    expect(
+      formatConferenceAvatarTileStatus({
+        isAvatarStopping: true,
+        agentStateLabel: 'Speaking',
+      }),
+    ).toBe('Stopping...');
+    expect(
+      formatConferenceAvatarTileStatus({
+        avatarListeningPaused: true,
+        agentStateLabel: 'Speaking',
+      }),
+    ).toBe('Paused');
+    expect(
+      formatConferenceAvatarTileStatus({
+        agentStateLabel: 'Thinking',
+      }),
+    ).toBe('Thinking...');
+    expect(
+      formatConferenceAvatarTileStatus({
+        agentStateLabel: 'Ready',
+      }),
+    ).toBe('Ready');
+    expect(formatConferenceAvatarTileStatus({})).toBe('Ready');
   });
 });
