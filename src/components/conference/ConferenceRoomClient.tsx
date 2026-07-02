@@ -35,6 +35,7 @@ import {
 import {
   isAvatarConnectingFromMetadata,
   isAvatarListeningPausedFromMetadata,
+  isConferenceRecordingActiveFromMetadata,
   parseConferenceRoomMetadata,
 } from '@/lib/conferenceRoomMetadata';
 import { formatScreenShareError } from '@/lib/formatScreenShareError';
@@ -82,28 +83,6 @@ type EgressResponse = {
   message?: string;
 };
 
-const formatRecordingStatus = (
-  status: string | undefined,
-  action: 'start' | 'stop',
-): string => {
-  const normalized = String(status ?? '').trim();
-  const labels: Record<string, string> = {
-    '0': 'starting',
-    '1': 'active',
-    '2': 'ending',
-    '3': 'complete',
-    '4': 'failed',
-    '5': 'aborted',
-    EGRESS_STARTING: 'starting',
-    EGRESS_ACTIVE: 'active',
-    EGRESS_ENDING: 'ending',
-    EGRESS_COMPLETE: 'complete',
-    EGRESS_FAILED: 'failed',
-    EGRESS_ABORTED: 'aborted',
-  };
-  return labels[normalized] || normalized || (action === 'start' ? 'started' : 'stopped');
-};
-
 type AvatarDispatchResponse = {
   already_dispatched?: boolean;
   expected_avatar_identity?: string;
@@ -141,12 +120,14 @@ const syncConferenceRoomMetadata = (
     setAvatarListeningPaused: (value: boolean) => void;
     setAvatarConnecting: (value: boolean) => void;
     setExpectedAvatarIdentity: (value: string) => void;
+    setRecordingActive: (value: boolean) => void;
   },
 ) => {
   setters.setAvatarListeningPaused(
     isAvatarListeningPausedFromMetadata(metadata),
   );
   setters.setAvatarConnecting(isAvatarConnectingFromMetadata(metadata));
+  setters.setRecordingActive(isConferenceRecordingActiveFromMetadata(metadata));
   const parsed = parseConferenceRoomMetadata(metadata);
   if (parsed.expected_avatar_identity) {
     setters.setExpectedAvatarIdentity(parsed.expected_avatar_identity);
@@ -162,7 +143,9 @@ const getVideoTilesForParticipant = (
   }
 
   const tiles: Tile[] = [];
-  for (const publication of getConferenceVideoPublicationsForGrid(participant)) {
+  for (const publication of getConferenceVideoPublicationsForGrid(
+    participant,
+  )) {
     const source = publication.source ?? Track.Source.Camera;
     const track = publication.videoTrack ?? null;
     tiles.push({
@@ -176,7 +159,10 @@ const getVideoTilesForParticipant = (
     });
   }
 
-  if (tiles.length === 0 && !isAvatarParticipantIdentity(participant.identity)) {
+  if (
+    tiles.length === 0 &&
+    !isAvatarParticipantIdentity(participant.identity)
+  ) {
     tiles.push({
       id: `${participant.sid}-empty-camera`,
       displayName: getParticipantDisplayName(participant),
@@ -317,11 +303,11 @@ export default function ConferenceRoomClient() {
   const [isMicrophoneUpdating, setIsMicrophoneUpdating] = useState(false);
   const [isRecordingUpdating, setIsRecordingUpdating] = useState(false);
   const [egressId, setEgressId] = useState('');
-  const [recordingStatus, setRecordingStatus] = useState('');
+  const [recordingActiveFromMetadata, setRecordingActiveFromMetadata] =
+    useState(false);
   const [expectedAvatarIdentity, setExpectedAvatarIdentity] = useState('');
-  const [remoteParticipantIdentities, setRemoteParticipantIdentities] = useState<
-    string[]
-  >([]);
+  const [remoteParticipantIdentities, setRemoteParticipantIdentities] =
+    useState<string[]>([]);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [avatarAgentState, setAvatarAgentState] = useState<
     ConferenceAgentState | undefined
@@ -553,7 +539,10 @@ export default function ConferenceRoomClient() {
         livekitRoom.on(RoomEvent.TrackUnpublished, handleRoomRefresh);
         livekitRoom.on(RoomEvent.ParticipantConnected, handleRoomRefresh);
         livekitRoom.on(RoomEvent.ParticipantDisconnected, handleRoomRefresh);
-        livekitRoom.on(RoomEvent.ParticipantAttributesChanged, handleRoomRefresh);
+        livekitRoom.on(
+          RoomEvent.ParticipantAttributesChanged,
+          handleRoomRefresh,
+        );
         livekitRoom.on(RoomEvent.LocalTrackPublished, handleRoomRefresh);
         livekitRoom.on(RoomEvent.LocalTrackUnpublished, handleRoomRefresh);
         livekitRoom.on(
@@ -572,6 +561,7 @@ export default function ConferenceRoomClient() {
             setAvatarListeningPaused,
             setAvatarConnecting,
             setExpectedAvatarIdentity,
+            setRecordingActive: setRecordingActiveFromMetadata,
           });
         });
 
@@ -579,6 +569,7 @@ export default function ConferenceRoomClient() {
           setAvatarListeningPaused,
           setAvatarConnecting,
           setExpectedAvatarIdentity,
+          setRecordingActive: setRecordingActiveFromMetadata,
         });
         if (!livekitRoom.metadata && payload.expected_avatar_identity) {
           setExpectedAvatarIdentity(payload.expected_avatar_identity);
@@ -632,15 +623,18 @@ export default function ConferenceRoomClient() {
     }
     if (activeSession && backendBaseUrl) {
       try {
-        await fetch(`${backendBaseUrl}/api/v1/livekit/conference/session-ended`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            access_code: activeSession.accessCode,
-            room_code: activeSession.roomCode,
-            role: activeSession.role,
-          }),
-        });
+        await fetch(
+          `${backendBaseUrl}/api/v1/livekit/conference/session-ended`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              access_code: activeSession.accessCode,
+              room_code: activeSession.roomCode,
+              role: activeSession.role,
+            }),
+          },
+        );
       } catch {
         // LiveKit webhooks perform authoritative teardown if this notify fails.
       }
@@ -669,8 +663,7 @@ export default function ConferenceRoomClient() {
 
   const isDemoScreenShareEnabled =
     process.env.NEXT_PUBLIC_DEMO_RECORDING_ENABLED === 'true';
-  const canShareScreen =
-    isDemoScreenShareEnabled && isScreenShareSupported();
+  const canShareScreen = isDemoScreenShareEnabled && isScreenShareSupported();
 
   const setScreenShareEnabled = async (enabled: boolean) => {
     if (!room || isScreenSharePublishing) return;
@@ -680,7 +673,9 @@ export default function ConferenceRoomClient() {
       await room.localParticipant.setScreenShareEnabled(enabled);
       refreshTiles(room);
     } catch (value: unknown) {
-      setError(formatScreenShareError(value, enabled && isDemoScreenShareEnabled));
+      setError(
+        formatScreenShareError(value, enabled && isDemoScreenShareEnabled),
+      );
     } finally {
       setIsScreenSharePublishing(false);
     }
@@ -710,6 +705,9 @@ export default function ConferenceRoomClient() {
 
   const isAvatarWaitingToJoin =
     !hasAvatarParticipant && (isAvatarStarting || avatarConnecting);
+
+  const isRecordingActive =
+    recordingActiveFromMetadata || Boolean(egressId);
 
   const avatarTileStatus = useMemo<ConferenceAvatarTileStatusInput>(
     () => ({
@@ -770,7 +768,9 @@ export default function ConferenceRoomClient() {
       }
       refreshTiles(room);
     } catch (value: unknown) {
-      setError(value instanceof Error ? value.message : 'Unable to start avatar.');
+      setError(
+        value instanceof Error ? value.message : 'Unable to start avatar.',
+      );
       setIsAvatarStarting(false);
     }
   };
@@ -803,7 +803,9 @@ export default function ConferenceRoomClient() {
       }
       refreshTiles(room);
     } catch (value: unknown) {
-      setError(value instanceof Error ? value.message : 'Unable to stop avatar.');
+      setError(
+        value instanceof Error ? value.message : 'Unable to stop avatar.',
+      );
     } finally {
       setIsAvatarStopping(false);
     }
@@ -844,7 +846,6 @@ export default function ConferenceRoomClient() {
       } else {
         setEgressId(payload.egress_id || '');
       }
-      setRecordingStatus(formatRecordingStatus(payload.status, action));
     } catch (value: unknown) {
       setError(
         value instanceof Error ? value.message : 'Recording update failed.',
@@ -982,12 +983,15 @@ export default function ConferenceRoomClient() {
               {isMicrophoneEnabled ? 'On' : 'Muted'}
             </span>
           </p>
-          {recordingStatus ? (
-            <p className="text-sm">
-              Recording status:{' '}
-              <span className="font-semibold">{recordingStatus}</span>
-            </p>
-          ) : null}
+          <p className="flex items-center gap-2 text-sm">
+            <span>Room recording:</span>
+            {isRecordingActive ? (
+              <span className="h-2 w-2 rounded-full bg-red-600" />
+            ) : null}
+            <span className="font-semibold">
+              {isRecordingActive ? 'In session' : 'Not in session'}
+            </span>
+          </p>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <RoomAudioAttachments attachments={audioAttachments} />
           {screenShareTiles.length > 0 ? (

@@ -3,6 +3,7 @@ export type ConferenceRoomMetadata = {
   avatar_listening_paused?: boolean;
   avatar_connecting?: boolean;
   expected_avatar_identity?: string;
+  recording_active?: boolean;
 };
 
 export const parseConferenceRoomMetadata = (
@@ -29,3 +30,7 @@ export const isAvatarListeningPausedFromMetadata = (
   metadata: string | undefined,
 ): boolean =>
   parseConferenceRoomMetadata(metadata).avatar_listening_paused === true;
+
+export const isConferenceRecordingActiveFromMetadata = (
+  metadata: string | undefined,
+): boolean => parseConferenceRoomMetadata(metadata).recording_active === true;
