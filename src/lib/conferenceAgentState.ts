@@ -94,6 +94,56 @@ export function formatConferenceAgentStateLabel(
   }
 }
 
+export type ConferenceAvatarTileStatusInput = {
+  isAvatarWaitingToJoin?: boolean;
+  isAvatarStopping?: boolean;
+  avatarListeningPaused?: boolean;
+  agentStateLabel?: string;
+};
+
+const AVATAR_TILE_STATUS_WITH_ELLIPSIS = new Set([
+  'Thinking',
+  'Speaking',
+  'Connecting',
+]);
+
+export function formatConferenceAvatarTileStatus(
+  input: ConferenceAvatarTileStatusInput,
+): string {
+  if (input.isAvatarWaitingToJoin) {
+    return 'Connecting...';
+  }
+
+  if (input.isAvatarStopping) {
+    return 'Stopping...';
+  }
+
+  if (input.avatarListeningPaused) {
+    return 'Paused';
+  }
+
+  if (input.agentStateLabel) {
+    if (AVATAR_TILE_STATUS_WITH_ELLIPSIS.has(input.agentStateLabel)) {
+      return `${input.agentStateLabel}...`;
+    }
+
+    return input.agentStateLabel;
+  }
+
+  return 'Ready';
+}
+
+export function formatConferenceAvatarTileHeaderLabel(
+  displayName: string,
+  options: {
+    isLocal?: boolean;
+  } & ConferenceAvatarTileStatusInput,
+): string {
+  const youSuffix = options.isLocal ? ' (You)' : '';
+  const status = formatConferenceAvatarTileStatus(options);
+  return `${displayName}${youSuffix} - ${status}`;
+}
+
 export function readConferenceAgentThinking(
   room: Room | null | undefined,
 ): boolean {
