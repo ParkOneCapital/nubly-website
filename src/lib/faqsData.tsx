@@ -7,7 +7,7 @@ const faqsData = [
   {
     question: 'Is my money safe?',
     answer:
-      'There is always some risk involved when investing, however, we have partnered with trusted third party services to ensure your funds are protected. Your investments are held with Alpaca Securities LLC, a member of Securities Investor Protection Corporation (SIPC). Interest bearing account services are provided by Treasury Prime, Inc and their partner banks which are members of Federal Deposit Insurance Corporation (FDIC).',
+      'There is always some risk involved when investing, however, we have partnered with trusted third party services to ensure your funds are protected. Your investments are held with Alpaca Securities LLC, a member of Securities Investor Protection Corporation (SIPC). Interest bearing account services are provided by Alpaca Securities LLC and their partner banks which are members of Federal Deposit Insurance Corporation (FDIC).',
   },
   {
     question: 'Is my information safe?',
