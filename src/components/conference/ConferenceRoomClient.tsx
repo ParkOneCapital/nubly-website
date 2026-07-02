@@ -406,6 +406,49 @@ export default function ConferenceRoomClient() {
   }, [room]);
 
   useEffect(() => {
+    if (!room || !session || !backendBaseUrl) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncRecordingStatus = async () => {
+      try {
+        const response = await fetch(
+          `${backendBaseUrl}/api/v1/livekit/conference/recording-status`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              access_code: session.accessCode,
+              room_code: session.roomCode,
+              role: session.role,
+            }),
+          },
+        );
+        const payload = (await response.json()) as {
+          recording_active?: boolean;
+        };
+        if (!cancelled && response.ok) {
+          setRecordingActiveFromMetadata(payload.recording_active === true);
+        }
+      } catch {
+        // Keep the last known recording state if polling fails.
+      }
+    };
+
+    void syncRecordingStatus();
+    const intervalId = setInterval(() => {
+      void syncRecordingStatus();
+    }, 3000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [backendBaseUrl, room, session]);
+
+  useEffect(() => {
     setSession(getConferenceSession());
     setHasLoadedSession(true);
   }, []);
@@ -556,8 +599,8 @@ export default function ConferenceRoomClient() {
             handleRoomRefresh();
           },
         );
-        livekitRoom.on(RoomEvent.RoomMetadataChanged, () => {
-          syncConferenceRoomMetadata(livekitRoom.metadata, {
+        livekitRoom.on(RoomEvent.RoomMetadataChanged, (metadata: string) => {
+          syncConferenceRoomMetadata(metadata, {
             setAvatarListeningPaused,
             setAvatarConnecting,
             setExpectedAvatarIdentity,
@@ -989,7 +1032,7 @@ export default function ConferenceRoomClient() {
               <span className="h-2 w-2 rounded-full bg-red-600" />
             ) : null}
             <span className="font-semibold">
-              {isRecordingActive ? 'In session' : 'Not in session'}
+              {isRecordingActive ? 'In session' : 'Recording off'}
             </span>
           </p>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
